@@ -1,0 +1,28 @@
+services:
+
+  # ── App: Buscador Contel ────────────────────────────────────
+  buscador:
+    build: .
+    container_name: contel-buscador
+    restart: unless-stopped
+    networks:
+      - traefik-public          # red externa donde vive tu Traefik
+    labels:
+      - "traefik.enable=true"
+      # Router HTTPS
+      - "traefik.http.routers.contel-buscador.rule=Host(`mantenimientos.domdoklab.me`)"
+      - "traefik.http.routers.contel-buscador.entrypoints=websecure"
+      - "traefik.http.routers.contel-buscador.tls=true"
+      - "traefik.http.routers.contel-buscador.tls.certresolver=letsencrypt"
+      # Servicio interno (puerto 80 de Nginx dentro del contenedor)
+      - "traefik.http.services.contel-buscador.loadbalancer.server.port=80"
+      # Redirección automática HTTP → HTTPS
+      - "traefik.http.routers.contel-buscador-http.rule=Host(`mantenimientos.domdoklab.me`)"
+      - "traefik.http.routers.contel-buscador-http.entrypoints=web"
+      - "traefik.http.routers.contel-buscador-http.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+
+networks:
+  traefik-public:
+    external: true             # red ya existente donde corre tu Traefik
