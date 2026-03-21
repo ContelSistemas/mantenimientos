@@ -5,8 +5,11 @@ services:
     build: .
     container_name: contel-buscador
     restart: unless-stopped
+    depends_on:
+      - api
     networks:
-      - traefik-public          # red externa donde vive tu Traefik
+      - traefik-public
+      - internal
     labels:
       - "traefik.enable=true"
       # Router HTTPS
@@ -23,6 +26,21 @@ services:
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
 
+  # ── API: Backend Buscador ───────────────────────────────────
+  api:
+    build: ./server
+    container_name: contel-api
+    restart: unless-stopped
+    volumes:
+      - ./server/data:/app/server/data
+    networks:
+      - internal
+    environment:
+      - PORT=3000
+      - DB_PATH=/app/server/data/contel.db
+
 networks:
   traefik-public:
-    external: true             # red ya existente donde corre tu Traefik
+    external: true
+  internal:
+    driver: bridge
