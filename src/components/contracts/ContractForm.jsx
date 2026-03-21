@@ -1,0 +1,199 @@
+import React, { useState } from 'react';
+import { CAT_CONFIG, SVC_LABELS } from '../../constants/config';
+import { CategoryRow } from './CategoryRow';
+
+export function ContractForm({ onClose, onSave }) {
+  const [formData, setFormData] = useState({
+    obra: "",
+    nCliente: "",
+    cliente: "",
+    descripcion: "",
+    servicios: {}
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Initialize selected categories
+  const [selectedCats, setSelectedCats] = useState([]);
+
+  const handleToggleCat = (cat) => {
+    setSelectedCats(prev => {
+      if (prev.includes(cat)) {
+        const next = prev.filter(c => c !== cat);
+        const nextSvcs = { ...formData.servicios };
+        delete nextSvcs[cat];
+        setFormData({ ...formData, servicios: nextSvcs });
+        return next;
+      } else {
+        const next = [...prev, cat];
+        const nextSvcs = { ...formData.servicios };
+        nextSvcs[cat] = {
+          "MONIT": false,
+          "HELP": false,
+          "PREV. PRES.": false,
+          "COR. PRES.": false
+        };
+        setFormData({ ...formData, servicios: nextSvcs });
+        return next;
+      }
+    });
+  };
+
+  const handleToggleSvc = (cat, svc) => {
+    setFormData(prev => ({
+      ...prev,
+      servicios: {
+        ...prev.servicios,
+        [cat]: {
+          ...prev.servicios[cat],
+          [svc]: !prev.servicios[cat][svc]
+        }
+      }
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.obra || !formData.nCliente || !formData.cliente) {
+      alert("Obra, Nº Cliente y Cliente son obligatorios");
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      const res = await fetch('/api/contracts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      if (!res.ok) throw new Error("Error al guardar");
+      onSave();
+      onClose();
+    } catch (err) {
+      console.error(err);
+      alert("Error al guardar el contrato");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+      background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center",
+      justifyContent: "center", zIndex: 100, padding: "20px"
+    }}>
+      <div style={{
+        background: "#0f0f1a", border: "1px solid #312e6e",
+        borderRadius: "12px", width: "100%", maxWidth: "600px",
+        maxHeight: "90vh", overflowY: "auto", padding: "24px",
+        boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)"
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
+          <h2 style={{ margin: 0, fontSize: "18px", color: "#f1f5f9" }}>Nuevo Contrato</h2>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: "20px" }}>×</button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div>
+              <label style={{ display: "block", fontSize: "10px", color: "#64748b", marginBottom: "4px", textTransform: "uppercase" }}>Obra *</label>
+              <input
+                required
+                value={formData.obra}
+                onChange={e => setFormData({ ...formData, obra: e.target.value.toUpperCase() })}
+                style={{ width: "100%", background: "#1e1b4b", border: "1px solid #4338ca", borderRadius: "6px", color: "white", padding: "8px", fontSize: "13px" }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "10px", color: "#64748b", marginBottom: "4px", textTransform: "uppercase" }}>Nº Cliente *</label>
+              <input
+                required
+                value={formData.nCliente}
+                onChange={e => setFormData({ ...formData, nCliente: e.target.value })}
+                style={{ width: "100%", background: "#1e1b4b", border: "1px solid #4338ca", borderRadius: "6px", color: "white", padding: "8px", fontSize: "13px" }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: "block", fontSize: "10px", color: "#64748b", marginBottom: "4px", textTransform: "uppercase" }}>Cliente *</label>
+            <input
+              required
+              value={formData.cliente}
+              onChange={e => setFormData({ ...formData, cliente: e.target.value })}
+              style={{ width: "100%", background: "#1e1b4b", border: "1px solid #4338ca", borderRadius: "6px", color: "white", padding: "8px", fontSize: "13px" }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: "block", fontSize: "10px", color: "#64748b", marginBottom: "4px", textTransform: "uppercase" }}>Descripción</label>
+            <textarea
+              value={formData.descripcion}
+              onChange={e => setFormData({ ...formData, descripcion: e.target.value })}
+              style={{ width: "100%", background: "#1e1b4b", border: "1px solid #4338ca", borderRadius: "6px", color: "white", padding: "8px", fontSize: "13px", minHeight: "60px", fontFamily: "inherit" }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: "block", fontSize: "10px", color: "#64748b", marginBottom: "8px", textTransform: "uppercase" }}>Categorías de Servicio</label>
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "12px" }}>
+              {Object.keys(CAT_CONFIG).map(cat => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => handleToggleCat(cat)}
+                  style={{
+                    padding: "4px 10px", borderRadius: "20px", fontSize: "10px", fontWeight: 600,
+                    cursor: "pointer", border: "1px solid",
+                    background: selectedCats.includes(cat) ? CAT_CONFIG[cat].color : "transparent",
+                    color: selectedCats.includes(cat) ? "white" : "#475569",
+                    borderColor: selectedCats.includes(cat) ? CAT_CONFIG[cat].color : "#1e293b"
+                  }}
+                >
+                  {CAT_CONFIG[cat].icon} {cat}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {selectedCats.map(cat => (
+                <CategoryRow
+                  key={cat}
+                  cat={cat}
+                  svcs={formData.servicios[cat]}
+                  isEditing={true}
+                  onToggleSvc={handleToggleSvc}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: "12px", marginTop: "12px" }}>
+            <button
+              type="submit"
+              disabled={isSaving}
+              style={{
+                flex: 1, background: "linear-gradient(135deg, #10b981, #059669)",
+                color: "white", border: "none", borderRadius: "8px",
+                padding: "12px", fontSize: "14px", fontWeight: 600, cursor: "pointer"
+              }}
+            >
+              {isSaving ? "Guardando..." : "Crear Contrato"}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                flex: 1, background: "#1e1b4b", color: "#f1f5f9",
+                border: "1px solid #312e6e", borderRadius: "8px",
+                padding: "12px", fontSize: "14px", fontWeight: 600, cursor: "pointer"
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

@@ -1,13 +1,21 @@
-# Contel Ingenieros — Buscador de Mantenimientos
+# Contel Ingenieros — Buscador de Mantenimientos y Helpdesk
 
-Aplicación web para la gestión y visualización de contratos de mantenimiento, servicios de monitorización y helpdesk. Desarrollada con **React**, **Node.js (Express)** y **SQLite**, orquestada con **Docker**.
+Aplicación web avanzada para la gestión y visualización de contratos de mantenimiento, servicios de monitorización y helpdesk. Desarrollada con **React**, **Node.js (Express)** y **SQLite**, orquestada mediante **Docker**.
 
-## 🚀 Arquitectura del Proyecto
+## 🚀 Arquitectura y Tecnologías
 
-- **Frontend**: React (Vite) + CSS nativo. Proporciona una interfaz rápida con búsqueda en tiempo real y filtrado dinámico.
-- **Backend (API)**: Express.js. Gestiona las operaciones CRUD y se comunica con la base de datos.
-- **Base de Datos**: SQLite (mediante `better-sqlite3`). Almacenamiento ligero y eficiente con persistencia mediante volúmenes de Docker.
-- **Infraestructura**: Docker Compose. Orquestación de contenedores con Nginx como proxy inverso para la API.
+- **Frontend**: React (Vite) + CSS nativo. Interfaz modularizada para alta mantenibilidad.
+- **Backend (API)**: Express.js + Zod para validación de esquemas.
+- **Base de Datos**: SQLite (`better-sqlite3`) en modo WAL para alto rendimiento, persistida mediante volúmenes de Docker.
+- **Infraestructura**: Docker Compose con Nginx como servidor web y proxy inverso.
+
+## ✨ Funcionalidades Implementadas
+
+- **Búsqueda en tiempo Real**: Filtrado dinámico por obra, cliente, nº cliente o descripción con resaltado de coincidencias.
+- **Alta de Contratos**: Formulario modal completo para registrar nuevas obras, clientes y servicios iniciales.
+- **Edición Rápida**: Modificación "in-place" de descripciones y estados de servicios (checkboxes) directamente desde la lista.
+- **Interfaz Responsiva**: Diseño moderno con temática oscura, iconos por categoría y feedback visual de copiado.
+- **Refactorización Modular**: Código organizado en componentes reutilizables (`Header`, `SearchBar`, `ContractRow`, `CategoryRow`, `ContractForm`).
 
 ## 🛠️ Requisitos previos
 
@@ -16,26 +24,33 @@ Aplicación web para la gestión y visualización de contratos de mantenimiento,
 
 ## 🏁 Cómo empezar
 
-Para levantar el proyecto completo (Frontend + Backend), ejecuta el siguiente comando en la raíz del proyecto:
+Para levantar el proyecto completo (Frontend + Backend), ejecuta el siguiente comando en la raíz:
 
 ```bash
 docker compose up -d --build
 ```
 
-- **Frontend**: Acceso en [http://localhost:8080](http://localhost:8080)
-- **API**: Acceso en [http://localhost:8080/api/contracts](http://localhost:8080/api/contracts)
+- **Frontend**: [http://localhost:8080](http://localhost:8080)
+- **API**: [http://localhost:8080/api/contracts](http://localhost:8080/api/contracts)
 
-## 📁 Estructura de archivos
+## 📁 Estructura del Proyecto
 
-- `/src`: Código fuente del Frontend (React).
-- `/server`: Código fuente del Backend (Node.js + SQLite).
-- `/server/data`: Ubicación de la base de datos `contel.db` (Persistida mediante volúmenes).
-- `docker-compose.yml`: Configuración de los servicios.
-- `nginx.conf`: Configuración del servidor Nginx y proxy inverso para la API.
+```text
+├── src/
+│   ├── components/
+│   │   ├── contracts/   # ContractRow, CategoryRow, ContractForm
+│   │   └── layout/      # Header, SearchBar
+│   ├── constants/       # Configuración de categorías e iconos
+│   ├── utils/           # Helpers (resaltado de texto, etc.)
+│   └── App.jsx          # Componente principal y lógica de estado
+├── server/
+│   ├── src/             # API Express y lógica de base de datos
+│   └── data/            # Base de datos SQLite persistida
+└── docker-compose.yml   # Orquestación de contenedores
+```
 
-## 📝 Próximas Mejoras
+## 📝 Próximos Pasos
 
-- [ ] Implementar pantalla para añadir nuevos contratos (Alta).
-- [ ] Implementar modo edición para modificar servicios y descripciones (CRUD completo).
-- [ ] Refactorización de componentes de React en archivos independientes.
-- [ ] Mejoras estéticas en los gráficos y feedback visual.
+- [ ] Implementar edición completa de contratos vía modal (añadir/quitar categorías).
+- [ ] Mejorar las gráficas de estadísticas de servicios.
+- [ ] Implementar sistema de logs para cambios en contratos.
