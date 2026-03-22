@@ -1,6 +1,6 @@
 services:
 
-  # ── App: Buscador Contel ────────────────────────────────────
+  # ── App: Buscador Contel (Frontend Nginx + Proxy) ──────────────────
   buscador:
     build: .
     container_name: contel-buscador
@@ -8,7 +8,7 @@ services:
     depends_on:
       - api
     networks:
-      - traefik-public
+      - traefik_default
       - internal
     labels:
       - "traefik.enable=true"
@@ -17,7 +17,7 @@ services:
       - "traefik.http.routers.contel-buscador.entrypoints=websecure"
       - "traefik.http.routers.contel-buscador.tls=true"
       - "traefik.http.routers.contel-buscador.tls.certresolver=letsencrypt"
-      # Servicio interno (puerto 80 de Nginx dentro del contenedor)
+      # Servicio interno (Nginx escucha en puerto 80 dentro del contenedor)
       - "traefik.http.services.contel-buscador.loadbalancer.server.port=80"
       # Redirección automática HTTP → HTTPS
       - "traefik.http.routers.contel-buscador-http.rule=Host(`mantenimientos.domdoklab.me`)"
@@ -26,7 +26,7 @@ services:
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
 
-  # ── API: Backend Buscador ───────────────────────────────────
+  # ── API: Backend Node.js (Express + SQLite) ────────────────────────
   api:
     build: ./server
     container_name: contel-api
@@ -40,7 +40,9 @@ services:
       - DB_PATH=/app/server/data/contel.db
 
 networks:
-  traefik-public:
+  # Red externa para conexión con el proxy Traefik
+  traefik_default:
     external: true
+  # Red interna aislada para comunicación entre servicios
   internal:
     driver: bridge
