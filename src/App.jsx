@@ -11,6 +11,7 @@ export default function App() {
   const [expanded, setExpanded] = useState(null);
   const [copied, setCopied] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [editingContract, setEditingContract] = useState(null);
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -88,6 +89,7 @@ export default function App() {
                 onToggle={() => toggleExpand(row.id)}
                 onUpdate={fetchData}
                 onCopy={copyText}
+                onEdit={() => setEditingContract(row)}
                 copied={copied}
               />
             ))}
@@ -95,9 +97,10 @@ export default function App() {
         )}
       </div>
 
-      {showForm && (
+      {(showForm || editingContract) && (
         <ContractForm
-          onClose={() => setShowForm(false)}
+          initialData={editingContract}
+          onClose={() => { setShowForm(false); setEditingContract(null); }}
           onSave={fetchData}
         />
       )}

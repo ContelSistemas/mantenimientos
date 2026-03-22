@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { CAT_CONFIG, SVC_LABELS } from '../../constants/config';
+import React, { useState, useEffect } from 'react';
+import { CAT_CONFIG } from '../../constants/config';
 import { CategoryRow } from './CategoryRow';
 
-export function ContractForm({ onClose, onSave }) {
+export function ContractForm({ onClose, onSave, initialData = null }) {
   const [formData, setFormData] = useState({
     obra: "",
     nCliente: "",
@@ -11,9 +11,20 @@ export function ContractForm({ onClose, onSave }) {
     servicios: {}
   });
   const [isSaving, setIsSaving] = useState(false);
-
-  // Initialize selected categories
   const [selectedCats, setSelectedCats] = useState([]);
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        obra: initialData.obra || "",
+        nCliente: initialData.nCliente || "",
+        cliente: initialData.cliente || "",
+        descripcion: initialData.descripcion || "",
+        servicios: JSON.parse(JSON.stringify(initialData.servicios || {}))
+      });
+      setSelectedCats(Object.keys(initialData.servicios || {}));
+    }
+  }, [initialData]);
 
   const handleToggleCat = (cat) => {
     setSelectedCats(prev => {
@@ -60,8 +71,12 @@ export function ContractForm({ onClose, onSave }) {
     
     setIsSaving(true);
     try {
-      const res = await fetch('/api/contracts', {
-        method: 'POST',
+      const isEdit = !!initialData?.id;
+      const url = isEdit ? `/api/contracts/${initialData.id}` : '/api/contracts';
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
@@ -76,6 +91,8 @@ export function ContractForm({ onClose, onSave }) {
     }
   };
 
+  const isEdit = !!initialData?.id;
+
   return (
     <div style={{
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
@@ -89,7 +106,9 @@ export function ContractForm({ onClose, onSave }) {
         boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)"
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
-          <h2 style={{ margin: 0, fontSize: "18px", color: "#f1f5f9" }}>Nuevo Contrato</h2>
+          <h2 style={{ margin: 0, fontSize: "18px", color: "#f1f5f9" }}>
+            {isEdit ? "Editar Contrato" : "Nuevo Contrato"}
+          </h2>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: "20px" }}>×</button>
         </div>
 
@@ -178,7 +197,7 @@ export function ContractForm({ onClose, onSave }) {
                 padding: "12px", fontSize: "14px", fontWeight: 600, cursor: "pointer"
               }}
             >
-              {isSaving ? "Guardando..." : "Crear Contrato"}
+              {isSaving ? "Guardando..." : isEdit ? "Guardar Cambios" : "Crear Contrato"}
             </button>
             <button
               type="button"

@@ -3,7 +3,7 @@ import { CategoryRow } from './CategoryRow';
 import { CAT_CONFIG } from '../../constants/config';
 import { highlight } from '../../utils/helpers';
 
-export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, copied }) {
+export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, onEdit, copied }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     descripcion: row.descripcion || "",
@@ -140,15 +140,28 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, co
           
           <div style={{ display: "flex", gap: "4px" }}>
             {!isEditing ? (
-              <button
-                onClick={handleEditClick}
-                style={{
-                  background: "#1e1b4b", border: "1px solid #4338ca", borderRadius: "6px",
-                  color: "#818cf8", padding: "4px 8px", fontSize: "10px", cursor: "pointer"
-                }}
-              >
-                ✎
-              </button>
+              <>
+                <button
+                  onClick={handleEditClick}
+                  title="Edición rápida"
+                  style={{
+                    background: "#1e1b4b", border: "1px solid #4338ca", borderRadius: "6px",
+                    color: "#818cf8", padding: "4px 8px", fontSize: "10px", cursor: "pointer"
+                  }}
+                >
+                  ✎
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onEdit(); }}
+                  title="Edición completa"
+                  style={{
+                    background: "#1e1b4b", border: "1px solid #4338ca", borderRadius: "6px",
+                    color: "#818cf8", padding: "4px 8px", fontSize: "10px", cursor: "pointer"
+                  }}
+                >
+                  ⚙️
+                </button>
+              </>
             ) : (
               <>
                 <button

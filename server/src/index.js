@@ -147,14 +147,62 @@ app.post('/api/contracts', (req, res) => {
   res.status(201).json(getContractShape(contractId));
 });
 
-// Update core fields
+// Update contract (full or partial)
 app.put('/api/contracts/:id', (req, res) => {
   const id = Number(req.params.id);
   const body = ContractSchema.partial().parse(req.body);
   const existing = db.prepare('SELECT * FROM contracts WHERE id = ?').get(id);
   if (!existing) return res.status(404).json({ error: 'Not found' });
-  db.prepare('UPDATE contracts SET obra = COALESCE(?, obra), nCliente = COALESCE(?, nCliente), cliente = COALESCE(?, cliente), descripcion = COALESCE(?, descripcion) WHERE id = ?')
-    .run(body.obra ?? null, body.nCliente ?? null, body.cliente ?? null, body.descripcion ?? null, id);
+
+  const updateTransaction = db.transaction((data) => {
+    // 1. Update core fields
+    db.prepare(`
+      UPDATE contracts 
+      SET obra = COALESCE(?, obra), 
+          nCliente = COALESCE(?, nCliente), 
+          cliente = COALESCE(?, cliente), 
+          descripcion = COALESCE(?, descripcion) 
+      WHERE id = ?
+    `).run(data.obra ?? null, data.nCliente ?? null, data.cliente ?? null, data.descripcion ?? null, id);
+
+    // 2. Update services if provided
+    if (data.servicios) {
+      const currentSvcs = db.prepare(`
+        SELECT cs.id, cat.name 
+        FROM contract_services cs 
+        JOIN categories cat ON cat.id = cs.category_id 
+        WHERE cs.contract_id = ?
+      `).all(id);
+
+      const newCatNames = Object.keys(data.servicios);
+      
+      // Delete services for categories not in the new set
+      for (const current of currentSvcs) {
+        if (!newCatNames.includes(current.name)) {
+          db.prepare('DELETE FROM contract_services WHERE id = ?').run(current.id);
+        }
+      }
+
+      // Upsert new/updated services
+      const getOrCreateCat = db.prepare('INSERT INTO categories (name) VALUES (?) ON CONFLICT(name) DO NOTHING');
+      const findCat = db.prepare('SELECT id FROM categories WHERE name = ?');
+      const upsertSvc = db.prepare(`
+        INSERT INTO contract_services (contract_id, category_id, mon, help, prev_pres, cor_pres)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(contract_id, category_id)
+        DO UPDATE SET mon=excluded.mon, help=excluded.help, prev_pres=excluded.prev_pres, cor_pres=excluded.cor_pres
+      `);
+
+      for (const [catName, flags] of Object.entries(data.servicios)) {
+        getOrCreateCat.run(catName);
+        const catId = findCat.get(catName).id;
+        const f = flagsFromBody(flags);
+        upsertSvc.run(id, catId, f.mon, f.help, f.prev_pres, f.cor_pres);
+      }
+    }
+  });
+
+  updateTransaction(body);
   res.json(getContractShape(id));
 });
 
