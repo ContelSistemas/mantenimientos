@@ -12,6 +12,7 @@ services:
       - internal
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=traefik_default"
       # Router HTTPS
       - "traefik.http.routers.contel-buscador.rule=Host(`mantenimientos.domdoklab.me`)"
       - "traefik.http.routers.contel-buscador.entrypoints=websecure"
