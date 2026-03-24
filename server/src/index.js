@@ -19,7 +19,7 @@ const db = new Database(DB_PATH);
 
 db.pragma('journal_mode = WAL');
 
-// Ensure schema
+// Ensure schema (Dynamic Refactor)
 const schema = `
 CREATE TABLE IF NOT EXISTS contracts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,31 +36,52 @@ CREATE TABLE IF NOT EXISTS contract_services (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   contract_id INTEGER NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
   category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
-  mon INTEGER NOT NULL,
-  help INTEGER NOT NULL,
-  prev_pres INTEGER NOT NULL,
-  cor_pres INTEGER NOT NULL,
+  services_json TEXT NOT NULL,
   UNIQUE(contract_id, category_id)
 );
 `;
 db.exec(schema);
 
-// Helpers
-const flagsFromBody = (o) => ({
-  mon: o?.MONIT ? 1 : 0,
-  help: o?.HELP ? 1 : 0,
-  prev_pres: o?.["PREV. PRES."] ? 1 : 0,
-  cor_pres: o?.["COR. PRES."] ? 1 : 0,
-});
+// Migration: Check if old columns exist and migrate to JSON
+try {
+  const tableInfo = db.prepare("PRAGMA table_info(contract_services)").all();
+  const hasOldColumns = tableInfo.some(c => c.name === 'mon');
+  if (hasOldColumns) {
+    console.log("Migrating contract_services to JSON schema...");
+    const oldData = db.prepare(`
+      SELECT cs.*, cat.name as cat_name 
+      FROM contract_services cs 
+      JOIN categories cat ON cat.id = cs.category_id
+    `).all();
+    
+    db.exec("DROP TABLE contract_services");
+    db.exec(`
+      CREATE TABLE contract_services (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        contract_id INTEGER NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+        category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+        services_json TEXT NOT NULL,
+        UNIQUE(contract_id, category_id)
+      )
+    `);
 
-const toSvcObject = (row) => ({
-  MONIT: !!row.mon,
-  HELP: !!row.help,
-  'PREV. PRES.': !!row.prev_pres,
-  'COR. PRES.': !!row.cor_pres,
-});
+    const insert = db.prepare('INSERT INTO contract_services (contract_id, category_id, services_json) VALUES (?, ?, ?)');
+    for (const row of oldData) {
+      const svcs = {
+        MONIT: !!row.mon,
+        HELP: !!row.help,
+        'PREV. PRES.': !!row.prev_pres,
+        'COR. PRES.': !!row.cor_pres
+      };
+      insert.run(row.contract_id, row.category_id, JSON.stringify(svcs));
+    }
+    console.log("Migration completed successfully.");
+  }
+} catch (e) {
+  console.error("Migration error (might be first run):", e.message);
+}
 
-function getContractShape(id) {
+const getContractShape = (id) => {
   const c = db.prepare('SELECT * FROM contracts WHERE id = ?').get(id);
   if (!c) return null;
   const svcs = db.prepare(`
@@ -71,7 +92,13 @@ function getContractShape(id) {
     ORDER BY cat.name
   `).all(id);
   const servicios = {};
-  for (const s of svcs) servicios[s.category] = toSvcObject(s);
+  for (const s of svcs) {
+    try {
+      servicios[s.category] = JSON.parse(s.services_json);
+    } catch (e) {
+      servicios[s.category] = {};
+    }
+  }
   return {
     id: c.id,
     obra: c.obra,
@@ -80,10 +107,18 @@ function getContractShape(id) {
     descripcion: c.descripcion,
     servicios,
   };
-}
+};
 
 // Routes
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
+
+const ContractSchema = z.object({
+  obra: z.string().min(1),
+  nCliente: z.string().min(1),
+  cliente: z.string().min(1),
+  descripcion: z.string().optional().nullable(),
+  servicios: z.record(z.string(), z.record(z.string(), z.boolean())).optional().default({})
+});
 
 // List + search
 app.get('/api/contracts', (req, res) => {
@@ -103,59 +138,38 @@ app.get('/api/contracts', (req, res) => {
   res.json(data);
 });
 
-// Get one
-app.get('/api/contracts/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const data = getContractShape(id);
-  if (!data) return res.status(404).json({ error: 'Not found' });
-  res.json(data);
-});
-
 // Create
-const ContractSchema = z.object({
-  obra: z.string().min(1),
-  nCliente: z.string().min(1),
-  cliente: z.string().min(1),
-  descripcion: z.string().optional().nullable(),
-  servicios: z.record(z.string(), z.object({
-    MONIT: z.boolean().optional().default(false),
-    HELP: z.boolean().optional().default(false),
-    'PREV. PRES.': z.boolean().optional().default(false),
-    'COR. PRES.': z.boolean().optional().default(false),
-  })).optional().default({})
-});
-
 app.post('/api/contracts', (req, res) => {
   const body = ContractSchema.parse(req.body);
   const insertC = db.prepare('INSERT INTO contracts (obra, nCliente, cliente, descripcion) VALUES (?, ?, ?, ?)');
   const result = insertC.run(body.obra, body.nCliente, body.cliente, body.descripcion ?? null);
   const contractId = result.lastInsertRowid;
+  
   const getOrCreateCat = db.prepare('INSERT INTO categories (name) VALUES (?) ON CONFLICT(name) DO NOTHING');
   const findCat = db.prepare('SELECT id FROM categories WHERE name = ?');
   const upsertSvc = db.prepare(`
-    INSERT INTO contract_services (contract_id, category_id, mon, help, prev_pres, cor_pres)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO contract_services (contract_id, category_id, services_json)
+    VALUES (?, ?, ?)
     ON CONFLICT(contract_id, category_id)
-    DO UPDATE SET mon=excluded.mon, help=excluded.help, prev_pres=excluded.prev_pres, cor_pres=excluded.cor_pres
+    DO UPDATE SET services_json=excluded.services_json
   `);
+
   for (const [cat, flags] of Object.entries(body.servicios || {})) {
     getOrCreateCat.run(cat);
     const catId = findCat.get(cat).id;
-    const f = flagsFromBody(flags);
-    upsertSvc.run(contractId, catId, f.mon, f.help, f.prev_pres, f.cor_pres);
+    upsertSvc.run(contractId, catId, JSON.stringify(flags));
   }
   res.status(201).json(getContractShape(contractId));
 });
 
-// Update contract (full or partial)
+// Update
 app.put('/api/contracts/:id', (req, res) => {
   const id = Number(req.params.id);
   const body = ContractSchema.partial().parse(req.body);
   const existing = db.prepare('SELECT * FROM contracts WHERE id = ?').get(id);
   if (!existing) return res.status(404).json({ error: 'Not found' });
 
-  const updateTransaction = db.transaction((data) => {
-    // 1. Update core fields
+  db.transaction((data) => {
     db.prepare(`
       UPDATE contracts 
       SET obra = COALESCE(?, obra), 
@@ -165,72 +179,37 @@ app.put('/api/contracts/:id', (req, res) => {
       WHERE id = ?
     `).run(data.obra ?? null, data.nCliente ?? null, data.cliente ?? null, data.descripcion ?? null, id);
 
-    // 2. Update services if provided
     if (data.servicios) {
       const currentSvcs = db.prepare(`
-        SELECT cs.id, cat.name 
-        FROM contract_services cs 
+        SELECT cs.id, cat.name FROM contract_services cs 
         JOIN categories cat ON cat.id = cs.category_id 
         WHERE cs.contract_id = ?
       `).all(id);
 
       const newCatNames = Object.keys(data.servicios);
-      
-      // Delete services for categories not in the new set
       for (const current of currentSvcs) {
         if (!newCatNames.includes(current.name)) {
           db.prepare('DELETE FROM contract_services WHERE id = ?').run(current.id);
         }
       }
 
-      // Upsert new/updated services
       const getOrCreateCat = db.prepare('INSERT INTO categories (name) VALUES (?) ON CONFLICT(name) DO NOTHING');
       const findCat = db.prepare('SELECT id FROM categories WHERE name = ?');
       const upsertSvc = db.prepare(`
-        INSERT INTO contract_services (contract_id, category_id, mon, help, prev_pres, cor_pres)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO contract_services (contract_id, category_id, services_json)
+        VALUES (?, ?, ?)
         ON CONFLICT(contract_id, category_id)
-        DO UPDATE SET mon=excluded.mon, help=excluded.help, prev_pres=excluded.prev_pres, cor_pres=excluded.cor_pres
+        DO UPDATE SET services_json=excluded.services_json
       `);
 
       for (const [catName, flags] of Object.entries(data.servicios)) {
         getOrCreateCat.run(catName);
         const catId = findCat.get(catName).id;
-        const f = flagsFromBody(flags);
-        upsertSvc.run(id, catId, f.mon, f.help, f.prev_pres, f.cor_pres);
+        upsertSvc.run(id, catId, JSON.stringify(flags));
       }
     }
-  });
+  })(body);
 
-  updateTransaction(body);
-  res.json(getContractShape(id));
-});
-
-// Upsert services for a contract
-app.put('/api/contracts/:id/services', (req, res) => {
-  const id = Number(req.params.id);
-  const body = z.record(z.string(), z.object({
-    MONIT: z.boolean().optional().default(false),
-    HELP: z.boolean().optional().default(false),
-    'PREV. PRES.': z.boolean().optional().default(false),
-    'COR. PRES.': z.boolean().optional().default(false),
-  })).parse(req.body);
-  const exists = db.prepare('SELECT id FROM contracts WHERE id = ?').get(id);
-  if (!exists) return res.status(404).json({ error: 'Not found' });
-  const getOrCreateCat = db.prepare('INSERT INTO categories (name) VALUES (?) ON CONFLICT(name) DO NOTHING');
-  const findCat = db.prepare('SELECT id FROM categories WHERE name = ?');
-  const upsertSvc = db.prepare(`
-    INSERT INTO contract_services (contract_id, category_id, mon, help, prev_pres, cor_pres)
-    VALUES (?, ?, ?, ?, ?, ?)
-    ON CONFLICT(contract_id, category_id)
-    DO UPDATE SET mon=excluded.mon, help=excluded.help, prev_pres=excluded.prev_pres, cor_pres=excluded.cor_pres
-  `);
-  for (const [cat, flags] of Object.entries(body)) {
-    getOrCreateCat.run(cat);
-    const catId = findCat.get(cat).id;
-    const f = flagsFromBody(flags);
-    upsertSvc.run(id, catId, f.mon, f.help, f.prev_pres, f.cor_pres);
-  }
   res.json(getContractShape(id));
 });
 

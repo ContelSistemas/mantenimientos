@@ -15,12 +15,25 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
 
   useEffect(() => {
     if (initialData) {
+      const mergedSvcs = JSON.parse(JSON.stringify(initialData.servicios || {}));
+      
+      // Asegurar que todas las categorías cargadas tengan todos sus servicios definidos
+      Object.keys(mergedSvcs).forEach(cat => {
+        if (CAT_CONFIG[cat]) {
+          (CAT_CONFIG[cat].services || []).forEach(s => {
+            if (mergedSvcs[cat][s] === undefined) {
+              mergedSvcs[cat][s] = false;
+            }
+          });
+        }
+      });
+
       setFormData({
         obra: initialData.obra || "",
         nCliente: initialData.nCliente || "",
         cliente: initialData.cliente || "",
         descripcion: initialData.descripcion || "",
-        servicios: JSON.parse(JSON.stringify(initialData.servicios || {}))
+        servicios: mergedSvcs
       });
       setSelectedCats(Object.keys(initialData.servicios || {}));
     }
@@ -37,12 +50,12 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
       } else {
         const next = [...prev, cat];
         const nextSvcs = { ...formData.servicios };
-        nextSvcs[cat] = {
-          "MONIT": false,
-          "HELP": false,
-          "PREV. PRES.": false,
-          "COR. PRES.": false
-        };
+        // Inicializar con los servicios definidos para esta categoría
+        const initialSvcs = {};
+        (CAT_CONFIG[cat].services || []).forEach(s => {
+          initialSvcs[s] = false;
+        });
+        nextSvcs[cat] = initialSvcs;
         setFormData({ ...formData, servicios: nextSvcs });
         return next;
       }

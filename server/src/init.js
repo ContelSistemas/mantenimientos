@@ -26,10 +26,7 @@ CREATE TABLE IF NOT EXISTS contract_services (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   contract_id INTEGER NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
   category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
-  mon INTEGER NOT NULL,
-  help INTEGER NOT NULL,
-  prev_pres INTEGER NOT NULL,
-  cor_pres INTEGER NOT NULL,
+  services_json TEXT NOT NULL,
   UNIQUE(contract_id, category_id)
 );
 `);

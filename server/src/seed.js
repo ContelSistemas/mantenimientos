@@ -19,10 +19,10 @@ const insertC = db.prepare('INSERT OR IGNORE INTO contracts (obra, nCliente, cli
 const insertCat = db.prepare('INSERT OR IGNORE INTO categories (name) VALUES (?)');
 const getCat = db.prepare('SELECT id FROM categories WHERE name = ?');
 const upsertSvc = db.prepare(`
-  INSERT INTO contract_services (contract_id, category_id, mon, help, prev_pres, cor_pres)
-  VALUES (?, ?, ?, ?, ?, ?)
+  INSERT INTO contract_services (contract_id, category_id, services_json)
+  VALUES (?, ?, ?)
   ON CONFLICT(contract_id, category_id)
-  DO UPDATE SET mon=excluded.mon, help=excluded.help, prev_pres=excluded.prev_pres, cor_pres=excluded.cor_pres
+  DO UPDATE SET services_json=excluded.services_json
 `);
 
 const tx = db.transaction(() => {
@@ -35,10 +35,7 @@ const tx = db.transaction(() => {
       upsertSvc.run(
         contract.id,
         catId,
-        flags?.MONIT ? 1 : 0,
-        flags?.HELP ? 1 : 0,
-        flags?.['PREV. PRES.'] ? 1 : 0,
-        flags?.['COR. PRES.'] ? 1 : 0,
+        JSON.stringify(flags)
       );
     }
   }
