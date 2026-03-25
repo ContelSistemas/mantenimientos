@@ -1,0 +1,77 @@
+:root {
+  /* Dark Theme (Default) */
+  --bg-color: #0f0f1a;
+  --text-color: #e2e8f0;
+  --header-bg: linear-gradient(135deg, #1e1b4b 0%, #0f0f1a 100%);
+  --header-border: #312e6e;
+  --accent-color: #6366f1;
+  --subtitle-color: #f1f5f9;
+  --stats-color: #64748b;
+  --stats-secondary: #475569;
+  --highlight-color: #818cf8;
+  --card-bg: #1e1b4b;
+  --card-border: #312e6e;
+  --card-bg-hover: #25225d;
+  --card-bg-expanded: #1a1740;
+  --input-bg: #1e1b4b;
+  --input-border: #312e6e;
+  --spinner-color: #818cf8;
+  --overlay-bg: rgba(0, 0, 0, 0.8);
+  --highlight-mark-bg: #f59e0b;
+  --highlight-mark-text: #1a1a2e;
+  
+  /* Inactive services in dark mode */
+  --svc-inactive-bg: #151528;
+  --svc-inactive-text: #475569;
+  --svc-inactive-border: #1e1b4b;
+}
+
+[data-theme='light'] {
+  /* Light Theme - Pastel & Soft */
+  --bg-color: #f0f4f8; /* Azul pastel muy suave, menos agresivo que el blanco */
+  --text-color: #334155;
+  --header-bg: linear-gradient(135deg, #cbd5e1 0%, #f1f5f9 100%);
+  --header-border: #cbd5e1;
+  --accent-color: #4f46e5;
+  --subtitle-color: #1e293b;
+  --stats-color: #64748b;
+  --stats-secondary: #94a3b8;
+  --highlight-color: #4f46e5;
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --card-bg-hover: #f8fafc;
+  --card-bg-expanded: #ffffff;
+  --input-bg: #f8fafc;
+  --input-border: #cbd5e1;
+  --spinner-color: #4f46e5;
+  --overlay-bg: rgba(15, 23, 42, 0.3);
+  --highlight-mark-bg: #fde68a; /* Amarillo pastel para resaltar */
+  --highlight-mark-text: #92400e;
+  
+  /* Variables para servicios inactivos */
+  --svc-inactive-bg: #f1f5f9;
+  --svc-inactive-text: #94a3b8;
+  --svc-inactive-border: #e2e8f0;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-top: 3px solid var(--spinner-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

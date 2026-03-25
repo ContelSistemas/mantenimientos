@@ -13,6 +13,40 @@ export default function App() {
   const [showForm, setShowForm] = useState(false);
   const [editingContract, setEditingContract] = useState(null);
 
+  // Theme management
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("theme") || "dark";
+  });
+
+  // Role management
+  const [userRole, setUserRole] = useState(() => {
+    return localStorage.getItem("userRole") || "VIEWER";
+  });
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === "dark" ? "light" : "dark"));
+  };
+
+  const loginAsAdmin = (password) => {
+    if (password === "produccion_2026") { // Contraseña actualizada
+      setUserRole("ADMIN");
+
+      localStorage.setItem("userRole", "ADMIN");
+      return true;
+    }
+    return false;
+  };
+
+  const logout = () => {
+    setUserRole("VIEWER");
+    localStorage.setItem("userRole", "VIEWER");
+  };
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
   const fetchData = useCallback(() => {
     setLoading(true);
     fetch("/api/contracts")
@@ -56,7 +90,7 @@ export default function App() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0f0f1a", fontFamily: "'DM Mono', 'Courier New', monospace", color: "#e2e8f0" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-color)", fontFamily: "'DM Mono', 'Courier New', monospace", color: "var(--text-color)" }}>
       <Header
         query={query}
         setQuery={setQuery}
@@ -64,19 +98,24 @@ export default function App() {
         error={error}
         resultsLength={results.length}
         dataLength={data.length}
-        onNewContract={() => setShowForm(true)}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        userRole={userRole}
+        onAdminLogin={loginAsAdmin}
+        onLogout={logout}
+        onNewContractClick={() => setShowForm(true)}
       />
 
       <div style={{ padding: "12px 18px 40px" }}>
         {loading && data.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "80px 20px", color: "#475569" }}>
-            <div className="spinner" style={{ marginBottom: "15px" }}></div>
+          <div style={{ textAlign: "center", padding: "80px 20px", color: "var(--stats-color)" }}>
+            <div className="spinner" style={{ marginBottom: "15px", margin: "0 auto" }}></div>
             <div style={{ fontSize: "14px" }}>Sincronizando con base de datos...</div>
           </div>
         ) : results.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "80px 20px", color: "#475569" }}>
+          <div style={{ textAlign: "center", padding: "80px 20px", color: "var(--stats-color)" }}>
             <div style={{ fontSize: "36px", marginBottom: "10px" }}>🔍</div>
-            <div style={{ fontSize: "14px" }}>{query ? <>Sin resultados para <strong style={{ color: "#818cf8" }}>"{query}"</strong></> : "No hay datos disponibles"}</div>
+            <div style={{ fontSize: "14px" }}>{query ? <>Sin resultados para <strong style={{ color: "var(--highlight-color)" }}>"{query}"</strong></> : "No hay datos disponibles"}</div>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
@@ -91,13 +130,14 @@ export default function App() {
                 onCopy={copyText}
                 onEdit={() => setEditingContract(row)}
                 copied={copied}
+                userRole={userRole}
               />
             ))}
           </div>
         )}
       </div>
 
-      {(showForm || editingContract) && (
+      {(showForm || editingContract) && userRole === "ADMIN" && (
         <ContractForm
           initialData={editingContract}
           onClose={() => { setShowForm(false); setEditingContract(null); }}
@@ -108,17 +148,8 @@ export default function App() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600;700&display=swap');
         * { box-sizing: border-box; }
-        input::placeholder { color: #475569; }
+        input::placeholder { color: var(--stats-secondary); }
         mark { font-family: inherit; }
-        .spinner {
-          width: 30px; height: 30px;
-          border: 3px solid #1e1b4b;
-          border-top-color: #6366f1;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-          margin: 0 auto;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
     </div>
   );

@@ -109,65 +109,65 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
   return (
     <div style={{
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-      background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center",
+      background: "var(--overlay-bg)", display: "flex", alignItems: "center",
       justifyContent: "center", zIndex: 100, padding: "20px"
     }}>
       <div style={{
-        background: "#0f0f1a", border: "1px solid #312e6e",
+        background: "var(--bg-color)", border: "1px solid var(--card-border)",
         borderRadius: "12px", width: "100%", maxWidth: "600px",
         maxHeight: "90vh", overflowY: "auto", padding: "24px",
         boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)"
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
-          <h2 style={{ margin: 0, fontSize: "18px", color: "#f1f5f9" }}>
+          <h2 style={{ margin: 0, fontSize: "18px", color: "var(--subtitle-color)" }}>
             {isEdit ? "Editar Contrato" : "Nuevo Contrato"}
           </h2>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: "20px" }}>×</button>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--stats-color)", cursor: "pointer", fontSize: "20px" }}>×</button>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
             <div>
-              <label style={{ display: "block", fontSize: "10px", color: "#64748b", marginBottom: "4px", textTransform: "uppercase" }}>Obra *</label>
+              <label style={{ display: "block", fontSize: "10px", color: "var(--stats-color)", marginBottom: "4px", textTransform: "uppercase" }}>Obra *</label>
               <input
                 required
                 value={formData.obra}
                 onChange={e => setFormData({ ...formData, obra: e.target.value.toUpperCase() })}
-                style={{ width: "100%", background: "#1e1b4b", border: "1px solid #4338ca", borderRadius: "6px", color: "white", padding: "8px", fontSize: "13px" }}
+                style={{ width: "100%", background: "var(--input-bg)", border: "1px solid var(--input-border)", borderRadius: "6px", color: "var(--text-color)", padding: "8px", fontSize: "13px" }}
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: "10px", color: "#64748b", marginBottom: "4px", textTransform: "uppercase" }}>Nº Cliente *</label>
+              <label style={{ display: "block", fontSize: "10px", color: "var(--stats-color)", marginBottom: "4px", textTransform: "uppercase" }}>Nº Cliente *</label>
               <input
                 required
                 value={formData.nCliente}
                 onChange={e => setFormData({ ...formData, nCliente: e.target.value })}
-                style={{ width: "100%", background: "#1e1b4b", border: "1px solid #4338ca", borderRadius: "6px", color: "white", padding: "8px", fontSize: "13px" }}
+                style={{ width: "100%", background: "var(--input-bg)", border: "1px solid var(--input-border)", borderRadius: "6px", color: "var(--text-color)", padding: "8px", fontSize: "13px" }}
               />
             </div>
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: "10px", color: "#64748b", marginBottom: "4px", textTransform: "uppercase" }}>Cliente *</label>
+            <label style={{ display: "block", fontSize: "10px", color: "var(--stats-color)", marginBottom: "4px", textTransform: "uppercase" }}>Cliente *</label>
             <input
               required
               value={formData.cliente}
               onChange={e => setFormData({ ...formData, cliente: e.target.value })}
-              style={{ width: "100%", background: "#1e1b4b", border: "1px solid #4338ca", borderRadius: "6px", color: "white", padding: "8px", fontSize: "13px" }}
+              style={{ width: "100%", background: "var(--input-bg)", border: "1px solid var(--input-border)", borderRadius: "6px", color: "var(--text-color)", padding: "8px", fontSize: "13px" }}
             />
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: "10px", color: "#64748b", marginBottom: "4px", textTransform: "uppercase" }}>Descripción</label>
+            <label style={{ display: "block", fontSize: "10px", color: "var(--stats-color)", marginBottom: "4px", textTransform: "uppercase" }}>Descripción</label>
             <textarea
               value={formData.descripcion}
               onChange={e => setFormData({ ...formData, descripcion: e.target.value })}
-              style={{ width: "100%", background: "#1e1b4b", border: "1px solid #4338ca", borderRadius: "6px", color: "white", padding: "8px", fontSize: "13px", minHeight: "60px", fontFamily: "inherit" }}
+              style={{ width: "100%", background: "var(--input-bg)", border: "1px solid var(--input-border)", borderRadius: "6px", color: "var(--text-color)", padding: "8px", fontSize: "13px", minHeight: "60px", fontFamily: "inherit" }}
             />
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: "10px", color: "#64748b", marginBottom: "8px", textTransform: "uppercase" }}>Categorías de Servicio</label>
+            <label style={{ display: "block", fontSize: "10px", color: "var(--stats-color)", marginBottom: "8px", textTransform: "uppercase" }}>Categorías de Servicio</label>
             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "12px" }}>
               {Object.keys(CAT_CONFIG).map(cat => (
                 <button
@@ -178,8 +178,8 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
                     padding: "4px 10px", borderRadius: "20px", fontSize: "10px", fontWeight: 600,
                     cursor: "pointer", border: "1px solid",
                     background: selectedCats.includes(cat) ? CAT_CONFIG[cat].color : "transparent",
-                    color: selectedCats.includes(cat) ? "white" : "#475569",
-                    borderColor: selectedCats.includes(cat) ? CAT_CONFIG[cat].color : "#1e293b"
+                    color: selectedCats.includes(cat) ? "white" : "var(--stats-secondary)",
+                    borderColor: selectedCats.includes(cat) ? CAT_CONFIG[cat].color : "var(--card-border)"
                   }}
                 >
                   {CAT_CONFIG[cat].icon} {cat}
@@ -216,8 +216,8 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
               type="button"
               onClick={onClose}
               style={{
-                flex: 1, background: "#1e1b4b", color: "#f1f5f9",
-                border: "1px solid #312e6e", borderRadius: "8px",
+                flex: 1, background: "var(--input-bg)", color: "var(--text-color)",
+                border: "1px solid var(--header-border)", borderRadius: "8px",
                 padding: "12px", fontSize: "14px", fontWeight: 600, cursor: "pointer"
               }}
             >

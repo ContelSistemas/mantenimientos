@@ -3,7 +3,7 @@ import { CategoryRow } from './CategoryRow';
 import { CAT_CONFIG } from '../../constants/config';
 import { highlight } from '../../utils/helpers';
 
-export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, onEdit, copied }) {
+export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, onEdit, copied, userRole }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     descripcion: row.descripcion || "",
@@ -75,32 +75,32 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
     <div
       onClick={() => !isEditing && onToggle()}
       style={{
-        background: isOpen ? "#1a1740" : "#151528",
-        border: `1px solid ${isOpen ? "#4338ca" : "#1e1b4b"}`,
+        background: isOpen ? "var(--card-bg-expanded)" : "var(--card-bg)",
+        border: `1px solid ${isOpen ? "var(--highlight-color)" : "var(--card-border)"}`,
         borderRadius: "10px", cursor: isEditing ? "default" : "pointer",
         transition: "all 0.15s", overflow: "hidden",
       }}
-      onMouseEnter={e => { if (!isOpen && !isEditing) { e.currentTarget.style.background = "#181630"; e.currentTarget.style.borderColor = "#312e6e"; } }}
-      onMouseLeave={e => { if (!isOpen && !isEditing) { e.currentTarget.style.background = "#151528"; e.currentTarget.style.borderColor = "#1e1b4b"; } }}
+      onMouseEnter={e => { if (!isOpen && !isEditing) { e.currentTarget.style.background = "var(--card-bg-hover)"; e.currentTarget.style.borderColor = "var(--highlight-color)"; } }}
+      onMouseLeave={e => { if (!isOpen && !isEditing) { e.currentTarget.style.background = "var(--card-bg)"; e.currentTarget.style.borderColor = "var(--card-border)"; } }}
     >
       {/* Main row */}
       <div style={{ padding: "11px 14px", display: "grid", gridTemplateColumns: "106px 60px 1fr auto", gap: "10px", alignItems: "center" }}>
         {/* Obra */}
         <div>
-          <div style={{ fontSize: "9px", color: "#475569", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>Obra</div>
+          <div style={{ fontSize: "9px", color: "var(--stats-color)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>Obra</div>
           <div onClick={e => onCopy(row.obra, e)} title="Click para copiar"
-            style={{ fontSize: "11px", fontWeight: 700, color: "#818cf8", cursor: "copy" }}>
+            style={{ fontSize: "11px", fontWeight: 700, color: "var(--highlight-color)", cursor: "copy" }}>
             {copied === row.obra ? "✓ Copiado" : highlight(row.obra, query)}
           </div>
         </div>
         {/* Nº Cliente */}
         <div>
-          <div style={{ fontSize: "9px", color: "#475569", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>Nº Cli.</div>
-          <div style={{ fontSize: "12px", fontWeight: 600, color: "#a5b4fc" }}>{highlight(row.nCliente, query)}</div>
+          <div style={{ fontSize: "9px", color: "var(--stats-color)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>Nº Cli.</div>
+          <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--accent-color)" }}>{highlight(row.nCliente, query)}</div>
         </div>
         {/* Cliente + desc */}
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: "12px", fontWeight: 600, color: "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-color)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {highlight(row.cliente, query)}
           </div>
           {isEditing ? (
@@ -111,14 +111,14 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
               onClick={e => e.stopPropagation()}
               placeholder="Descripción..."
               style={{
-                width: "100%", background: "#1e1b4b", border: "1px solid #4338ca",
-                borderRadius: "4px", color: "#f1f5f9", fontSize: "11px", padding: "2px 6px",
+                width: "100%", background: "var(--input-bg)", border: "1px solid var(--input-border)",
+                borderRadius: "4px", color: "var(--text-color)", fontSize: "11px", padding: "2px 6px",
                 fontFamily: "inherit", marginTop: "2px"
               }}
             />
           ) : (
             row.descripcion && (
-              <div style={{ fontSize: "11px", color: "#64748b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <div style={{ fontSize: "11px", color: "var(--stats-color)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {highlight(row.descripcion, query)}
               </div>
             )
@@ -139,14 +139,14 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
           </div>
           
           <div style={{ display: "flex", gap: "4px" }}>
-            {!isEditing ? (
+            {userRole === "ADMIN" && !isEditing ? (
               <>
                 <button
                   onClick={handleEditClick}
                   title="Edición rápida"
                   style={{
-                    background: "#1e1b4b", border: "1px solid #4338ca", borderRadius: "6px",
-                    color: "#818cf8", padding: "4px 8px", fontSize: "10px", cursor: "pointer"
+                    background: "var(--input-bg)", border: "1px solid var(--input-border)", borderRadius: "6px",
+                    color: "var(--highlight-color)", padding: "4px 8px", fontSize: "10px", cursor: "pointer"
                   }}
                 >
                   ✎
@@ -155,14 +155,14 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
                   onClick={(e) => { e.stopPropagation(); onEdit(); }}
                   title="Edición completa"
                   style={{
-                    background: "#1e1b4b", border: "1px solid #4338ca", borderRadius: "6px",
-                    color: "#818cf8", padding: "4px 8px", fontSize: "10px", cursor: "pointer"
+                    background: "var(--input-bg)", border: "1px solid var(--input-border)", borderRadius: "6px",
+                    color: "var(--highlight-color)", padding: "4px 8px", fontSize: "10px", cursor: "pointer"
                   }}
                 >
                   ⚙️
                 </button>
               </>
-            ) : (
+            ) : userRole === "ADMIN" && isEditing ? (
               <>
                 <button
                   onClick={handleSave}
@@ -184,17 +184,17 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
                   ✕
                 </button>
               </>
-            )}
+            ) : null}
           </div>
 
-          <span style={{ color: "#475569", fontSize: "11px", transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", display: "inline-block", transition: "transform 0.2s" }}>▾</span>
+          <span style={{ color: "var(--stats-color)", fontSize: "11px", transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", display: "inline-block", transition: "transform 0.2s" }}>▾</span>
         </div>
       </div>
 
       {/* Expanded services */}
       {isOpen && (
-        <div style={{ borderTop: "1px solid #2d2b55", padding: "10px 14px", display: "flex", flexDirection: "column", gap: "5px", background: "#13112a" }}>
-          <div style={{ fontSize: "9px", color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "2px" }}>
+        <div style={{ borderTop: "1px solid var(--card-border)", padding: "10px 14px", display: "flex", flexDirection: "column", gap: "5px", background: "var(--bg-color)" }}>
+          <div style={{ fontSize: "9px", color: "var(--stats-color)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "2px" }}>
             {isEditing ? "Editar servicios" : "Servicios contratados"}
           </div>
           {Object.entries(isEditing ? editData.servicios : row.servicios || {}).map(([cat, svcs]) => (

@@ -24,9 +24,10 @@ export function CategoryRow({ cat, svcs, isEditing, onToggleSvc }) {
                 display: "flex", alignItems: "center", gap: "4px",
                 fontSize: "9px", fontWeight: 700, cursor: "pointer",
                 padding: "2px 6px", borderRadius: "3px",
-                background: active ? cfg.color + "25" : "#1e1b4b",
-                color: active ? cfg.color : "#374151",
-                border: `1px solid ${active ? cfg.color + "55" : "#1e293b"}`,
+                background: active ? cfg.color + "25" : "var(--svc-inactive-bg)",
+                color: active ? cfg.color : "var(--svc-inactive-text)",
+                border: `1px solid ${active ? cfg.color + "55" : "var(--svc-inactive-border)"}`,
+                opacity: active ? 1 : 0.6,
               }}>
                 <input
                   type="checkbox"
@@ -43,9 +44,10 @@ export function CategoryRow({ cat, svcs, isEditing, onToggleSvc }) {
             <span key={svc} title={label} style={{
               fontSize: "9px", fontWeight: active ? 700 : 500, letterSpacing: "0.05em",
               padding: "2px 6px", borderRadius: "3px",
-              background: active ? cfg.color + "25" : "#1e1b4b",
-              color: active ? cfg.color : "#374151",
-              border: `1px solid ${active ? cfg.color + "55" : "#1e293b"}`,
+              background: active ? cfg.color + "25" : "var(--svc-inactive-bg)",
+              color: active ? cfg.color : "var(--svc-inactive-text)",
+              border: `1px solid ${active ? cfg.color + "55" : "var(--svc-inactive-border)"}`,
+              opacity: active ? 1 : 0.4,
             }}>
               {short}
             </span>
