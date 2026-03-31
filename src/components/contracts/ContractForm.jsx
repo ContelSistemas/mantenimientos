@@ -5,6 +5,7 @@ import { CategoryRow } from './CategoryRow';
 export function ContractForm({ onClose, onSave, initialData = null }) {
   const [formData, setFormData] = useState({
     obra: "",
+    empresa: "CI",
     nCliente: "",
     cliente: "",
     descripcion: "",
@@ -30,6 +31,7 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
 
       setFormData({
         obra: initialData.obra || "",
+        empresa: initialData.empresa || "CI",
         nCliente: initialData.nCliente || "",
         cliente: initialData.cliente || "",
         descripcion: initialData.descripcion || "",
@@ -126,7 +128,7 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
             <div>
               <label style={{ display: "block", fontSize: "10px", color: "var(--stats-color)", marginBottom: "4px", textTransform: "uppercase" }}>Obra *</label>
               <input
@@ -135,6 +137,17 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
                 onChange={e => setFormData({ ...formData, obra: e.target.value.toUpperCase() })}
                 style={{ width: "100%", background: "var(--input-bg)", border: "1px solid var(--input-border)", borderRadius: "6px", color: "var(--text-color)", padding: "8px", fontSize: "13px" }}
               />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "10px", color: "var(--stats-color)", marginBottom: "4px", textTransform: "uppercase" }}>Empresa *</label>
+              <select
+                value={formData.empresa}
+                onChange={e => setFormData({ ...formData, empresa: e.target.value })}
+                style={{ width: "100%", background: "var(--input-bg)", border: "1px solid var(--input-border)", borderRadius: "6px", color: "var(--text-color)", padding: "8px", fontSize: "13px", height: "37px", appearance: "none" }}
+              >
+                <option value="CI">CI - Ingenieros</option>
+                <option value="CS">CS - Seguridad</option>
+              </select>
             </div>
             <div>
               <label style={{ display: "block", fontSize: "10px", color: "var(--stats-color)", marginBottom: "4px", textTransform: "uppercase" }}>Nº Cliente *</label>

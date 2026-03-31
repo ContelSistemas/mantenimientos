@@ -23,7 +23,8 @@ db.pragma('journal_mode = WAL');
 const schema = `
 CREATE TABLE IF NOT EXISTS contracts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  obra TEXT NOT NULL UNIQUE,
+  obra TEXT NOT NULL,
+  empresa TEXT NOT NULL DEFAULT 'CI',
   nCliente TEXT NOT NULL,
   cliente TEXT NOT NULL,
   descripcion TEXT
@@ -41,6 +42,58 @@ CREATE TABLE IF NOT EXISTS contract_services (
 );
 `;
 db.exec(schema);
+
+// Migration: Remove UNIQUE from obra and add empresa column if not exists
+try {
+  const tableInfo = db.prepare("PRAGMA table_info(contracts)").all();
+  const hasEmpresa = tableInfo.some(c => c.name === 'empresa');
+  
+  // Check if obra is unique
+  const indexInfo = db.prepare("PRAGMA index_list(contracts)").all();
+  const obraIsUnique = indexInfo.some(idx => {
+    const detail = db.prepare(`PRAGMA index_info(${idx.name})`).all();
+    return idx.unique && detail.some(d => d.name === 'obra');
+  });
+
+  if (!hasEmpresa || obraIsUnique) {
+    console.log("Migrating contracts table to remove UNIQUE(obra) and add empresa...");
+    
+    // Disable foreign keys temporarily to avoid CASCADE DELETE
+    db.pragma('foreign_keys = OFF');
+    
+    try {
+      db.transaction(() => {
+        // Create new table
+        db.exec(`
+          CREATE TABLE contracts_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            obra TEXT NOT NULL,
+            empresa TEXT NOT NULL DEFAULT 'CI',
+            nCliente TEXT NOT NULL,
+            cliente TEXT NOT NULL,
+            descripcion TEXT
+          )
+        `);
+
+        // Copy data
+        db.exec(`
+          INSERT INTO contracts_new (id, obra, nCliente, cliente, descripcion)
+          SELECT id, obra, nCliente, cliente, descripcion FROM contracts
+        `);
+
+        // Swap tables
+        db.exec("DROP TABLE contracts");
+        db.exec("ALTER TABLE contracts_new RENAME TO contracts");
+      })();
+      console.log("Migration for contracts table completed.");
+    } finally {
+      // Re-enable foreign keys
+      db.pragma('foreign_keys = ON');
+    }
+  }
+} catch (e) {
+  console.error("Migration error for contracts table:", e.message);
+}
 
 // Migration: Check if old columns exist and migrate to JSON
 try {
@@ -102,6 +155,7 @@ const getContractShape = (id) => {
   return {
     id: c.id,
     obra: c.obra,
+    empresa: c.empresa,
     nCliente: c.nCliente,
     cliente: c.cliente,
     descripcion: c.descripcion,
@@ -114,6 +168,7 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
 const ContractSchema = z.object({
   obra: z.string().min(1),
+  empresa: z.enum(['CI', 'CS']).default('CI'),
   nCliente: z.string().min(1),
   cliente: z.string().min(1),
   descripcion: z.string().optional().nullable(),
@@ -141,8 +196,8 @@ app.get('/api/contracts', (req, res) => {
 // Create
 app.post('/api/contracts', (req, res) => {
   const body = ContractSchema.parse(req.body);
-  const insertC = db.prepare('INSERT INTO contracts (obra, nCliente, cliente, descripcion) VALUES (?, ?, ?, ?)');
-  const result = insertC.run(body.obra, body.nCliente, body.cliente, body.descripcion ?? null);
+  const insertC = db.prepare('INSERT INTO contracts (obra, empresa, nCliente, cliente, descripcion) VALUES (?, ?, ?, ?, ?)');
+  const result = insertC.run(body.obra, body.empresa, body.nCliente, body.cliente, body.descripcion ?? null);
   const contractId = result.lastInsertRowid;
   
   const getOrCreateCat = db.prepare('INSERT INTO categories (name) VALUES (?) ON CONFLICT(name) DO NOTHING');
@@ -173,11 +228,12 @@ app.put('/api/contracts/:id', (req, res) => {
     db.prepare(`
       UPDATE contracts 
       SET obra = COALESCE(?, obra), 
+          empresa = COALESCE(?, empresa),
           nCliente = COALESCE(?, nCliente), 
           cliente = COALESCE(?, cliente), 
           descripcion = COALESCE(?, descripcion) 
       WHERE id = ?
-    `).run(data.obra ?? null, data.nCliente ?? null, data.cliente ?? null, data.descripcion ?? null, id);
+    `).run(data.obra ?? null, data.empresa ?? null, data.nCliente ?? null, data.cliente ?? null, data.descripcion ?? null, id);
 
     if (data.servicios) {
       const currentSvcs = db.prepare(`

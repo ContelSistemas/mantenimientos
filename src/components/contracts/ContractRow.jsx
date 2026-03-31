@@ -84,13 +84,29 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
       onMouseLeave={e => { if (!isOpen && !isEditing) { e.currentTarget.style.background = "var(--card-bg)"; e.currentTarget.style.borderColor = "var(--card-border)"; } }}
     >
       {/* Main row */}
-      <div style={{ padding: "11px 14px", display: "grid", gridTemplateColumns: "106px 60px 1fr auto", gap: "10px", alignItems: "center" }}>
+      <div style={{ padding: "11px 14px", display: "grid", gridTemplateColumns: "106px 40px 60px 1fr auto", gap: "10px", alignItems: "center" }}>
         {/* Obra */}
         <div>
           <div style={{ fontSize: "9px", color: "var(--stats-color)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>Obra</div>
           <div onClick={e => onCopy(row.obra, e)} title="Click para copiar"
             style={{ fontSize: "11px", fontWeight: 700, color: "var(--highlight-color)", cursor: "copy" }}>
             {copied === row.obra ? "✓ Copiado" : highlight(row.obra, query)}
+          </div>
+        </div>
+        {/* Empresa */}
+        <div>
+          <div style={{ fontSize: "9px", color: "var(--stats-color)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>Emp.</div>
+          <div style={{ 
+            fontSize: "10px", 
+            fontWeight: 800, 
+            color: "white", 
+            background: row.empresa === 'CS' ? "linear-gradient(135deg, #f59e0b, #d97706)" : "linear-gradient(135deg, #3b82f6, #2563eb)",
+            padding: "1px 4px",
+            borderRadius: "4px",
+            textAlign: "center",
+            width: "fit-content"
+          }}>
+            {row.empresa}
           </div>
         </div>
         {/* Nº Cliente */}
