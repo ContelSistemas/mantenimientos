@@ -142,7 +142,24 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
         </div>
         {/* Icons + actions */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-          <div style={{ display: "flex", gap: "3px", flexWrap: "wrap", justifyContent: "flex-end", maxWidth: "100px" }}>
+          <div style={{ display: "flex", gap: "3px", flexWrap: "wrap", justifyContent: "flex-end", maxWidth: "120px" }}>
+            {row.pdf_url && (
+              <a 
+                href={row.pdf_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                title="Ver Contrato PDF"
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "11px", padding: "2px 6px", borderRadius: "3px",
+                  background: "#ef444422", border: "1px solid #ef444444",
+                  color: "#ef4444", textDecoration: "none"
+                }}
+              >
+                PDF
+              </a>
+            )}
             {cats.map(cat => (
               <span key={cat} title={cat} style={{
                 fontSize: "11px", padding: "2px 4px", borderRadius: "3px",

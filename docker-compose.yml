@@ -34,6 +34,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./server/data:/app/server/data
+      - ./server/uploads:/app/server/uploads
     networks:
       - internal
     environment:

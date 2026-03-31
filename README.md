@@ -6,16 +6,18 @@ Aplicación web avanzada para la gestión y visualización de contratos de mante
 
 - **Frontend**: React (Vite) + CSS nativo. Interfaz modularizada para alta mantenibilidad.
 - **Backend (API)**: Express.js + Zod para validación de esquemas.
+- **Gestión de Archivos**: `multer` para subida de contratos en PDF, servidos de forma segura vía Nginx.
 - **Base de Datos**: SQLite (`better-sqlite3`) en modo WAL para alto rendimiento, persistida mediante volúmenes de Docker.
 - **Infraestructura**: Docker Compose con Nginx como servidor web y proxy inverso.
 
 ## ✨ Funcionalidades Implementadas
 
-- **Búsqueda en tiempo Real**: Filtrado dinámico por obra, cliente, nº cliente o descripción con resaltado de coincidencias.
-- **Alta de Contratos**: Formulario modal completo para registrar nuevas obras, clientes y servicios iniciales.
+- **Búsqueda en Tiempo Real**: Filtrado dinámico por obra, cliente, nº cliente o descripción con resaltado de coincidencias.
+- **Gestión Completa de Contratos**: Alta, edición (vía modal) y borrado de contratos con confirmación de seguridad.
+- **Contratos en PDF**: Posibilidad de adjuntar, ver y eliminar el contrato original en PDF para cada obra. Los archivos se borran automáticamente al eliminar el contrato.
 - **Edición Rápida**: Modificación "in-place" de descripciones y estados de servicios (checkboxes) directamente desde la lista.
-- **Interfaz Responsiva**: Diseño moderno con temática oscura, iconos por categoría y feedback visual de copiado.
-- **Refactorización Modular**: Código organizado en componentes reutilizables (`Header`, `SearchBar`, `ContractRow`, `CategoryRow`, `ContractForm`).
+- **Interfaz Responsiva**: Diseño moderno con temática oscura/clara, iconos por categoría y feedback visual de copiado.
+- **Protección de Edición**: Sistema de contraseña para evitar modificaciones accidentales por operadores no autorizados.
 
 ## 🛠️ Requisitos previos
 
@@ -24,14 +26,14 @@ Aplicación web avanzada para la gestión y visualización de contratos de mante
 
 ## 🏁 Cómo empezar
 
-Para levantar el proyecto completo (Frontend + Backend), ejecuta el siguiente comando en la raíz:
+Para levantar el proyecto completo o aplicar actualizaciones, ejecuta:
 
 ```bash
 docker compose up -d --build
 ```
 
-- **Frontend**: [http://localhost:8080](http://localhost:8080)
-- **API**: [http://localhost:8080/api/contracts](http://localhost:8080/api/contracts)
+- **Frontend**: [http://mantenimientos.domdoklab.me](http://mantenimientos.domdoklab.me) (o localhost en desarrollo)
+- **API**: [http://localhost:3000/api/contracts](http://localhost:3000/api/contracts)
 
 ## 📁 Estructura del Proyecto
 
@@ -45,12 +47,13 @@ docker compose up -d --build
 │   └── App.jsx          # Componente principal y lógica de estado
 ├── server/
 │   ├── src/             # API Express y lógica de base de datos
-│   └── data/            # Base de datos SQLite persistida
-└── docker-compose.yml   # Orquestación de contenedores
+│   ├── data/            # Base de datos SQLite persistida
+│   └── uploads/         # Almacenamiento persistente de contratos en PDF
+└── docker-compose.yml   # Orquestación de contenedores y volúmenes
 ```
 
 ## 📝 Próximos Pasos
 
-- [ ] Implementar edición completa de contratos vía modal (añadir/quitar categorías).
 - [ ] Mejorar las gráficas de estadísticas de servicios.
 - [ ] Implementar sistema de logs para cambios en contratos.
+- [ ] Exportación de listados a Excel/CSV.

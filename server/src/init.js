@@ -13,10 +13,12 @@ db.pragma('journal_mode = WAL');
 db.exec(`
 CREATE TABLE IF NOT EXISTS contracts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  obra TEXT NOT NULL UNIQUE,
+  obra TEXT NOT NULL,
+  empresa TEXT NOT NULL DEFAULT 'CI',
   nCliente TEXT NOT NULL,
   cliente TEXT NOT NULL,
-  descripcion TEXT
+  descripcion TEXT,
+  pdf_url TEXT
 );
 CREATE TABLE IF NOT EXISTS categories (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

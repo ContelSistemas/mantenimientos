@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CAT_CONFIG } from '../../constants/config';
 import { CategoryRow } from './CategoryRow';
 
@@ -12,7 +12,10 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
     servicios: {}
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [selectedCats, setSelectedCats] = useState([]);
+  const [pdfFile, setPdfFile] = useState(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (initialData) {
@@ -77,6 +80,38 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
     }));
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm("¿Estás seguro de que quieres eliminar este contrato? Esta acción no se puede deshacer.")) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/contracts/${initialData.id}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) throw new Error("Error al eliminar");
+      onSave();
+      onClose();
+    } catch (err) {
+      console.error(err);
+      alert("Error al eliminar el contrato");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleRemovePdf = async () => {
+    if (!window.confirm("¿Eliminar el PDF adjunto?")) return;
+    try {
+      await fetch(`/api/contracts/${initialData.id}/pdf`, { method: 'DELETE' });
+      onSave();
+      onClose(); // Cerrar para refrescar
+    } catch (err) {
+      alert("Error al eliminar el PDF");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.obra || !formData.nCliente || !formData.cliente) {
@@ -96,6 +131,21 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
         body: JSON.stringify(formData)
       });
       if (!res.ok) throw new Error("Error al guardar");
+      
+      const savedContract = await res.json();
+      const contractId = savedContract.id;
+
+      // Subir PDF si hay uno seleccionado
+      if (pdfFile) {
+        const pdfFormData = new FormData();
+        pdfFormData.append('pdf', pdfFile);
+        const pdfRes = await fetch(`/api/contracts/${contractId}/pdf`, {
+          method: 'POST',
+          body: pdfFormData
+        });
+        if (!pdfRes.ok) alert("El contrato se guardó pero hubo un error al subir el PDF");
+      }
+
       onSave();
       onClose();
     } catch (err) {
@@ -179,6 +229,43 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
             />
           </div>
 
+          {/* PDF Section */}
+          <div style={{ background: "var(--input-bg)", padding: "12px", borderRadius: "8px", border: "1px dashed var(--input-border)" }}>
+            <label style={{ display: "block", fontSize: "10px", color: "var(--stats-color)", marginBottom: "8px", textTransform: "uppercase" }}>Documento PDF (Contrato)</label>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <input
+                type="file"
+                accept=".pdf"
+                ref={fileInputRef}
+                onChange={e => setPdfFile(e.target.files[0])}
+                style={{ display: "none" }}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current.click()}
+                style={{
+                  padding: "6px 12px", borderRadius: "6px", background: "var(--card-bg-expanded)",
+                  color: "var(--text-color)", border: "1px solid var(--card-border)", fontSize: "12px", cursor: "pointer"
+                }}
+              >
+                {pdfFile ? "Cambiar PDF" : "Seleccionar PDF"}
+              </button>
+              {pdfFile && <span style={{ fontSize: "11px", color: "var(--highlight-color)" }}>{pdfFile.name}</span>}
+              {!pdfFile && initialData?.pdf_url && (
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ fontSize: "11px", color: "#10b981" }}>✓ PDF cargado</span>
+                  <button 
+                    type="button" 
+                    onClick={handleRemovePdf}
+                    style={{ background: "none", border: "none", color: "#ef4444", fontSize: "10px", cursor: "pointer", textDecoration: "underline" }}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div>
             <label style={{ display: "block", fontSize: "10px", color: "var(--stats-color)", marginBottom: "8px", textTransform: "uppercase" }}>Categorías de Servicio</label>
             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "12px" }}>
@@ -216,15 +303,31 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
           <div style={{ display: "flex", gap: "12px", marginTop: "12px" }}>
             <button
               type="submit"
-              disabled={isSaving}
+              disabled={isSaving || isDeleting}
               style={{
-                flex: 1, background: "linear-gradient(135deg, #10b981, #059669)",
+                flex: 2, background: "linear-gradient(135deg, #10b981, #059669)",
                 color: "white", border: "none", borderRadius: "8px",
                 padding: "12px", fontSize: "14px", fontWeight: 600, cursor: "pointer"
               }}
             >
               {isSaving ? "Guardando..." : isEdit ? "Guardar Cambios" : "Crear Contrato"}
             </button>
+            
+            {isEdit && (
+              <button
+                type="button"
+                disabled={isSaving || isDeleting}
+                onClick={handleDelete}
+                style={{
+                  flex: 1, background: "#ef4444",
+                  color: "white", border: "none", borderRadius: "8px",
+                  padding: "12px", fontSize: "14px", fontWeight: 600, cursor: "pointer"
+                }}
+              >
+                {isDeleting ? "..." : "Eliminar"}
+              </button>
+            )}
+
             <button
               type="button"
               onClick={onClose}
