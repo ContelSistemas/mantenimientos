@@ -29,6 +29,9 @@ CREATE TABLE IF NOT EXISTS contract_services (
   contract_id INTEGER NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
   category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
   services_json TEXT NOT NULL,
+  periodicity TEXT,
+  last_execution TEXT,
+  next_execution TEXT,
   UNIQUE(contract_id, category_id)
 );
 `);

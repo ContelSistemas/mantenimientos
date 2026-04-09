@@ -1,3 +1,12 @@
+export const PERIODICITY_OPTIONS = [
+  { value: "mensual", label: "Mensual" },
+  { value: "trimestral", label: "Trimestral" },
+  { value: "cuatrimestral", label: "Cuatrimestral" },
+  { value: "semestral", label: "Semestral" },
+  { value: "anual", label: "Anual" },
+  { value: "bienal", label: "Bienal" },
+];
+
 export const SVC_LABELS = {
   "MONIT":       { short: "MON", label: "Monitorización" },
   "HELP":        { short: "HLP", label: "Helpdesk" },

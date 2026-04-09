@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS contract_services (
   contract_id INTEGER NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
   category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
   services_json TEXT NOT NULL,
+  periodicity TEXT,
+  last_execution TEXT,
+  next_execution TEXT,
   UNIQUE(contract_id, category_id)
 );
 `;
@@ -58,6 +61,20 @@ try {
   }
 } catch (e) {
   console.error("Migration error for pdf_url:", e.message);
+}
+
+// Migration: Add maintenance columns to contract_services if not exists
+try {
+  const tableInfo = db.prepare("PRAGMA table_info(contract_services)").all();
+  const hasPeriodicity = tableInfo.some(c => c.name === 'periodicity');
+  if (!hasPeriodicity) {
+    console.log("Migrating contract_services table to add maintenance columns...");
+    db.exec("ALTER TABLE contract_services ADD COLUMN periodicity TEXT");
+    db.exec("ALTER TABLE contract_services ADD COLUMN last_execution TEXT");
+    db.exec("ALTER TABLE contract_services ADD COLUMN next_execution TEXT");
+  }
+} catch (e) {
+  console.error("Migration error for maintenance columns:", e.message);
 }
 
 // Serve static files from uploads
@@ -191,9 +208,19 @@ const getContractShape = (id) => {
   const servicios = {};
   for (const s of svcs) {
     try {
-      servicios[s.category] = JSON.parse(s.services_json);
+      servicios[s.category] = {
+        flags: JSON.parse(s.services_json),
+        periodicity: s.periodicity,
+        last_execution: s.last_execution,
+        next_execution: s.next_execution
+      };
     } catch (e) {
-      servicios[s.category] = {};
+      servicios[s.category] = {
+        flags: {},
+        periodicity: null,
+        last_execution: null,
+        next_execution: null
+      };
     }
   }
   return {
@@ -211,6 +238,13 @@ const getContractShape = (id) => {
 // Routes
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
+const ServiceSchema = z.object({
+  flags: z.record(z.string(), z.boolean()).default({}),
+  periodicity: z.string().optional().nullable(),
+  last_execution: z.string().optional().nullable(),
+  next_execution: z.string().optional().nullable()
+});
+
 const ContractSchema = z.object({
   obra: z.string().min(1),
   empresa: z.enum(['CI', 'CS']).default('CI'),
@@ -218,7 +252,7 @@ const ContractSchema = z.object({
   cliente: z.string().min(1),
   descripcion: z.string().optional().nullable(),
   pdf_url: z.string().optional().nullable(),
-  servicios: z.record(z.string(), z.record(z.string(), z.boolean())).optional().default({})
+  servicios: z.record(z.string(), ServiceSchema).optional().default({})
 });
 
 // List + search
@@ -249,16 +283,20 @@ app.post('/api/contracts', (req, res) => {
   const getOrCreateCat = db.prepare('INSERT INTO categories (name) VALUES (?) ON CONFLICT(name) DO NOTHING');
   const findCat = db.prepare('SELECT id FROM categories WHERE name = ?');
   const upsertSvc = db.prepare(`
-    INSERT INTO contract_services (contract_id, category_id, services_json)
-    VALUES (?, ?, ?)
+    INSERT INTO contract_services (contract_id, category_id, services_json, periodicity, last_execution, next_execution)
+    VALUES (?, ?, ?, ?, ?, ?)
     ON CONFLICT(contract_id, category_id)
-    DO UPDATE SET services_json=excluded.services_json
+    DO UPDATE SET 
+      services_json=excluded.services_json,
+      periodicity=excluded.periodicity,
+      last_execution=excluded.last_execution,
+      next_execution=excluded.next_execution
   `);
 
-  for (const [cat, flags] of Object.entries(body.servicios || {})) {
+  for (const [cat, data] of Object.entries(body.servicios || {})) {
     getOrCreateCat.run(cat);
     const catId = findCat.get(cat).id;
-    upsertSvc.run(contractId, catId, JSON.stringify(flags));
+    upsertSvc.run(contractId, catId, JSON.stringify(data.flags), data.periodicity ?? null, data.last_execution ?? null, data.next_execution ?? null);
   }
   res.status(201).json(getContractShape(contractId));
 });
@@ -299,16 +337,20 @@ app.put('/api/contracts/:id', (req, res) => {
       const getOrCreateCat = db.prepare('INSERT INTO categories (name) VALUES (?) ON CONFLICT(name) DO NOTHING');
       const findCat = db.prepare('SELECT id FROM categories WHERE name = ?');
       const upsertSvc = db.prepare(`
-        INSERT INTO contract_services (contract_id, category_id, services_json)
-        VALUES (?, ?, ?)
+        INSERT INTO contract_services (contract_id, category_id, services_json, periodicity, last_execution, next_execution)
+        VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT(contract_id, category_id)
-        DO UPDATE SET services_json=excluded.services_json
+        DO UPDATE SET 
+          services_json=excluded.services_json,
+          periodicity=excluded.periodicity,
+          last_execution=excluded.last_execution,
+          next_execution=excluded.next_execution
       `);
 
-      for (const [catName, flags] of Object.entries(data.servicios)) {
+      for (const [catName, svcData] of Object.entries(data.servicios)) {
         getOrCreateCat.run(catName);
         const catId = findCat.get(catName).id;
-        upsertSvc.run(id, catId, JSON.stringify(flags));
+        upsertSvc.run(id, catId, JSON.stringify(svcData.flags), svcData.periodicity ?? null, svcData.last_execution ?? null, svcData.next_execution ?? null);
       }
     }
   })(body);

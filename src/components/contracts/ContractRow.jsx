@@ -32,21 +32,14 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
     e.stopPropagation();
     setIsSaving(true);
     try {
-      // update description if changed
-      if (editData.descripcion !== row.descripcion) {
-        await fetch(`/api/contracts/${row.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ descripcion: editData.descripcion })
-        });
-      }
-      
-      // update services
-      await fetch(`/api/contracts/${row.id}/services`, {
+      // update contract (including description and services)
+      const res = await fetch(`/api/contracts/${row.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editData.servicios)
+        body: JSON.stringify(editData)
       });
+      
+      if (!res.ok) throw new Error("Error al guardar");
       
       onUpdate(); // refresh data
       setIsEditing(false);
@@ -65,7 +58,23 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
         ...prev.servicios,
         [cat]: {
           ...prev.servicios[cat],
-          [svc]: !prev.servicios[cat][svc]
+          flags: {
+            ...prev.servicios[cat].flags,
+            [svc]: !prev.servicios[cat].flags[svc]
+          }
+        }
+      }
+    }));
+  };
+
+  const changeMaintenance = (cat, field, value) => {
+    setEditData(prev => ({
+      ...prev,
+      servicios: {
+        ...prev.servicios,
+        [cat]: {
+          ...prev.servicios[cat],
+          [field]: value
         }
       }
     }));
@@ -237,6 +246,7 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
               svcs={svcs}
               isEditing={isEditing}
               onToggleSvc={toggleSvc}
+              onChangeMaintenance={changeMaintenance}
             />
           ))}
         </div>

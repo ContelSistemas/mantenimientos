@@ -21,12 +21,23 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
     if (initialData) {
       const mergedSvcs = JSON.parse(JSON.stringify(initialData.servicios || {}));
       
-      // Asegurar que todas las categorías cargadas tengan todos sus servicios definidos
+      // Asegurar que todas las categorías cargadas tengan la estructura correcta
       Object.keys(mergedSvcs).forEach(cat => {
         if (CAT_CONFIG[cat]) {
+          // Si es la estructura antigua (solo flags), migrarla
+          if (mergedSvcs[cat] && !mergedSvcs[cat].flags) {
+            mergedSvcs[cat] = {
+              flags: mergedSvcs[cat],
+              periodicity: null,
+              last_execution: null,
+              next_execution: null
+            };
+          }
+
+          // Asegurar que todos los flags estén definidos
           (CAT_CONFIG[cat].services || []).forEach(s => {
-            if (mergedSvcs[cat][s] === undefined) {
-              mergedSvcs[cat][s] = false;
+            if (mergedSvcs[cat].flags[s] === undefined) {
+              mergedSvcs[cat].flags[s] = false;
             }
           });
         }
@@ -56,9 +67,14 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
         const next = [...prev, cat];
         const nextSvcs = { ...formData.servicios };
         // Inicializar con los servicios definidos para esta categoría
-        const initialSvcs = {};
+        const initialSvcs = {
+          flags: {},
+          periodicity: null,
+          last_execution: null,
+          next_execution: null
+        };
         (CAT_CONFIG[cat].services || []).forEach(s => {
-          initialSvcs[s] = false;
+          initialSvcs.flags[s] = false;
         });
         nextSvcs[cat] = initialSvcs;
         setFormData({ ...formData, servicios: nextSvcs });
@@ -74,7 +90,23 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
         ...prev.servicios,
         [cat]: {
           ...prev.servicios[cat],
-          [svc]: !prev.servicios[cat][svc]
+          flags: {
+            ...prev.servicios[cat].flags,
+            [svc]: !prev.servicios[cat].flags[svc]
+          }
+        }
+      }
+    }));
+  };
+
+  const handleChangeMaintenance = (cat, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      servicios: {
+        ...prev.servicios,
+        [cat]: {
+          ...prev.servicios[cat],
+          [field]: value
         }
       }
     }));
@@ -295,6 +327,7 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
                   svcs={formData.servicios[cat]}
                   isEditing={true}
                   onToggleSvc={handleToggleSvc}
+                  onChangeMaintenance={handleChangeMaintenance}
                 />
               ))}
             </div>
