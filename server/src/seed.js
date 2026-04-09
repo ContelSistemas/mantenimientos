@@ -26,6 +26,11 @@ const upsertSvc = db.prepare(`
 `);
 
 const tx = db.transaction(() => {
+  const countResult = db.prepare('SELECT COUNT(*) as count FROM contracts').get();
+  if (countResult.count > 0) {
+    return false; // Indicamos que no se ha hecho nada
+  }
+
   for (const row of raw) {
     insertC.run(row.obra, row.nCliente, row.cliente, row.descripcion || null);
     const contract = db.prepare('SELECT id FROM contracts WHERE obra = ?').get(row.obra);
@@ -39,11 +44,16 @@ const tx = db.transaction(() => {
       );
     }
   }
+  return true;
 });
 
 try {
-  tx();
-  console.log('Seed completed.');
+  const seeded = tx();
+  if (seeded) {
+    console.log('Seed completed successfully.');
+  } else {
+    console.log('Database already contains data. Skipping seed.');
+  }
 } catch (e) {
   console.error('Seed failed:', e);
   process.exit(1);
