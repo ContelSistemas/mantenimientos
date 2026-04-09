@@ -24,4 +24,4 @@ RUN chown -R node:node /app
 USER node
 
 EXPOSE 3000
-CMD ["sh", "-c", "npm run init:db && npm start"]
+CMD ["npm", "start"]

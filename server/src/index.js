@@ -175,6 +175,9 @@ try {
         contract_id INTEGER NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
         category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
         services_json TEXT NOT NULL,
+        periodicity TEXT,
+        last_execution TEXT,
+        next_execution TEXT,
         UNIQUE(contract_id, category_id)
       )
     `);
@@ -193,6 +196,38 @@ try {
   }
 } catch (e) {
   console.error("Migration error (might be first run):", e.message);
+}
+
+// Initial Seed Logic (after migrations)
+try {
+  const count = db.prepare('SELECT COUNT(*) as count FROM contracts').get().count;
+  if (count === 0) {
+    const DATA_PATH = path.join(__dirname, 'seed-data.json');
+    if (fs.existsSync(DATA_PATH)) {
+      console.log('Database empty. Running initial seed...');
+      const raw = JSON.parse(fs.readFileSync(DATA_PATH, 'utf-8'));
+      
+      const insertC = db.prepare('INSERT INTO contracts (obra, nCliente, cliente, descripcion) VALUES (?, ?, ?, ?)');
+      const insertCat = db.prepare('INSERT OR IGNORE INTO categories (name) VALUES (?)');
+      const getCat = db.prepare('SELECT id FROM categories WHERE name = ?');
+      const insertSvc = db.prepare('INSERT INTO contract_services (contract_id, category_id, services_json) VALUES (?, ?, ?)');
+
+      db.transaction(() => {
+        for (const row of raw) {
+          const res = insertC.run(row.obra, row.nCliente, row.cliente, row.descripcion || null);
+          const contractId = res.lastInsertRowid;
+          for (const [cat, flags] of Object.entries(row.servicios || {})) {
+            insertCat.run(cat);
+            const catId = getCat.get(cat).id;
+            insertSvc.run(contractId, catId, JSON.stringify(flags));
+          }
+        }
+      })();
+      console.log('Seed completed successfully.');
+    }
+  }
+} catch (e) {
+  console.error('Seed failed:', e.message);
 }
 
 const getContractShape = (id) => {

@@ -6,9 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon --watch src --exec node src/index.js",
-    "start": "node src/index.js",
-    "seed": "node src/seed.js",
-    "init:db": "node src/init.js && npm run seed"
+    "start": "node src/index.js"
   },
   "dependencies": {
     "better-sqlite3": "^9.4.0",
