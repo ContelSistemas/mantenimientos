@@ -5,20 +5,9 @@ import { SVC_LABELS } from '../../constants/config';
 export function Header({ 
   query, setQuery, categoryFilter, setCategoryFilter, loading, error, resultsLength, dataLength, 
   onNewContractClick, theme, toggleTheme,
-  userRole, onAdminLogin, onLogout
+  userRole, onLogout, username,
+  activeSection, onSectionChange
 }) {
-  const handleRoleToggle = () => {
-    if (userRole === "ADMIN") {
-      onLogout();
-    } else {
-      const pass = prompt("Introduce contraseña de administrador:");
-      if (pass) {
-        const success = onAdminLogin(pass);
-        if (!success) alert("Contraseña incorrecta");
-      }
-    }
-  };
-
   return (
     <div style={{
       background: "var(--header-bg)",
@@ -43,16 +32,16 @@ export function Header({
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           {/* Role Badge/Button */}
           <button
-            onClick={handleRoleToggle}
             style={{
-              background: userRole === "ADMIN" ? "#10b98122" : "transparent",
+              background: userRole === "ADMIN" ? "#10b98122" : "#38bdf822",
               color: userRole === "ADMIN" ? "#10b981" : "var(--stats-color)",
-              border: `1px solid ${userRole === "ADMIN" ? "#10b981" : "var(--card-border)"}`,
+              border: `1px solid ${userRole === "ADMIN" ? "#10b981" : "#38bdf8"}`,
               borderRadius: "20px", padding: "4px 12px", fontSize: "10px", fontWeight: 600,
-              cursor: "pointer", display: "flex", alignItems: "center", gap: "5px"
+              display: "flex", alignItems: "center", gap: "5px"
             }}
+            type="button"
           >
-            {userRole === "ADMIN" ? "🔓 ADMIN" : "🔒 LECTURA"}
+            {userRole === "ADMIN" ? "ADMIN" : "LECTURA"} · {username}
           </button>
 
           <button
@@ -87,40 +76,100 @@ export function Header({
               <span style={{ fontSize: "16px" }}>+</span> Nuevo Contrato
             </button>
           )}
+
+          <button
+            onClick={onLogout}
+            type="button"
+            style={{
+              background: "transparent",
+              color: "var(--stats-color)",
+              border: "1px solid var(--card-border)",
+              borderRadius: "8px",
+              padding: "8px 10px",
+              fontSize: "11px",
+              fontWeight: 600,
+              cursor: "pointer"
+            }}
+          >
+            Cerrar sesion
+          </button>
         </div>
       </div>
 
-      <SearchBar 
-        query={query} 
-        setQuery={setQuery} 
-        categoryFilter={categoryFilter} 
-        setCategoryFilter={setCategoryFilter} 
-        loading={loading} 
-      />
+      <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+        <button
+          type="button"
+          onClick={() => onSectionChange("contracts")}
+          style={{
+            border: "1px solid var(--card-border)",
+            background: activeSection === "contracts" ? "var(--accent-color)" : "var(--card-bg)",
+            color: activeSection === "contracts" ? "white" : "var(--text-color)",
+            borderRadius: "8px",
+            padding: "6px 10px",
+            fontSize: "11px",
+            fontWeight: 600,
+            cursor: "pointer"
+          }}
+        >
+          Buscador Contratos
+        </button>
+        <button
+          type="button"
+          onClick={() => onSectionChange("coverage")}
+          style={{
+            border: "1px solid var(--card-border)",
+            background: activeSection === "coverage" ? "var(--accent-color)" : "var(--card-bg)",
+            color: activeSection === "coverage" ? "white" : "var(--text-color)",
+            borderRadius: "8px",
+            padding: "6px 10px",
+            fontSize: "11px",
+            fontWeight: 600,
+            cursor: "pointer"
+          }}
+        >
+          Asignacion de Soporte
+        </button>
+      </div>
+
+      {activeSection === "contracts" ? (
+        <SearchBar 
+          query={query} 
+          setQuery={setQuery} 
+          categoryFilter={categoryFilter} 
+          setCategoryFilter={setCategoryFilter} 
+          loading={loading} 
+        />
+      ) : null}
 
       {/* Stats + legend */}
-      <div style={{ display: "flex", gap: "14px", marginTop: "10px", flexWrap: "wrap", alignItems: "center" }}>
-        <span style={{ fontSize: "10px", color: "var(--stats-color)" }}>
-          {loading ? (
-            <span>Cargando datos...</span>
-          ) : error ? (
-            <span style={{ color: "#ef4444" }}>Error: {error}</span>
-          ) : (
-            <>
-              <span style={{ color: "var(--highlight-color)", fontWeight: 700 }}>{resultsLength}</span> resultado{resultsLength !== 1 ? "s" : ""}
-              {(query || categoryFilter) && <span> de {dataLength}</span>}
-              {" · "}pulsa fila para ver servicios o editar
-            </>
-          )}
-        </span>
-        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-          {Object.entries(SVC_LABELS).map(([k, v]) => (
-            <span key={k} style={{ fontSize: "9px", color: "var(--stats-secondary)" }}>
-              <span style={{ color: "var(--highlight-color)", fontWeight: 700 }}>{v.short}</span> = {v.label}
-            </span>
-          ))}
+      {activeSection === "contracts" ? (
+        <div style={{ display: "flex", gap: "14px", marginTop: "10px", flexWrap: "wrap", alignItems: "center" }}>
+          <span style={{ fontSize: "10px", color: "var(--stats-color)" }}>
+            {loading ? (
+              <span>Cargando datos...</span>
+            ) : error ? (
+              <span style={{ color: "#ef4444" }}>Error: {error}</span>
+            ) : (
+              <>
+                <span style={{ color: "var(--highlight-color)", fontWeight: 700 }}>{resultsLength}</span> resultado{resultsLength !== 1 ? "s" : ""}
+                {(query || categoryFilter) && <span> de {dataLength}</span>}
+                {" · "}pulsa fila para ver servicios o editar
+              </>
+            )}
+          </span>
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            {Object.entries(SVC_LABELS).map(([k, v]) => (
+              <span key={k} style={{ fontSize: "9px", color: "var(--stats-secondary)" }}>
+                <span style={{ color: "var(--highlight-color)", fontWeight: 700 }}>{v.short}</span> = {v.label}
+              </span>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div style={{ marginTop: "6px", fontSize: "11px", color: "var(--stats-color)" }}>
+          Consulta y simulacion de cobertura interna por ausencia de tecnico.
+        </div>
+      )}
     </div>
   );
 }

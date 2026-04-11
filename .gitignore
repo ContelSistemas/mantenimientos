@@ -36,3 +36,6 @@ Thumbs.db
 
 # Docker
 docker-compose.override.yml
+
+# IA
+context.md

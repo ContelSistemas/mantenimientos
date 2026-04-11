@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs';
 import multer from 'multer';
+import crypto from 'node:crypto';
 
 const app = express();
 app.use(cors());
@@ -22,6 +23,14 @@ fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
+
+const SESSION_COOKIE_NAME = 'contel_session';
+const SESSION_MAX_AGE_SECONDS = Number(process.env.SESSION_MAX_AGE_SECONDS || 60 * 60 * 8); // 8h
+const SESSION_MAX_AGE_MS = SESSION_MAX_AGE_SECONDS * 1000;
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'produccion_2026';
+const VIEWER_USERNAME = process.env.VIEWER_USERNAME || 'viewer';
+const VIEWER_PASSWORD = process.env.VIEWER_PASSWORD || 'lectura_2026';
 
 // Ensure schema (Dynamic Refactor)
 const schema = `
@@ -51,6 +60,128 @@ CREATE TABLE IF NOT EXISTS contract_services (
 `;
 db.exec(schema);
 
+db.exec(`
+CREATE TABLE IF NOT EXISTS auth_users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  role TEXT NOT NULL CHECK (role IN ('ADMIN', 'VIEWER')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS auth_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  token_hash TEXT NOT NULL UNIQUE,
+  user_id INTEGER NOT NULL REFERENCES auth_users(id) ON DELETE CASCADE,
+  expires_at TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires_at ON auth_sessions(expires_at);
+`);
+
+const hashPassword = (password) => {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+  return `${salt}:${hash}`;
+};
+
+const verifyPassword = (password, storedHash) => {
+  const [salt, expectedHash] = storedHash.split(':');
+  if (!salt || !expectedHash) return false;
+  const actualHash = crypto.scryptSync(password, salt, 64).toString('hex');
+  const expectedBuffer = Buffer.from(expectedHash, 'hex');
+  const actualBuffer = Buffer.from(actualHash, 'hex');
+  if (expectedBuffer.length !== actualBuffer.length) return false;
+  return crypto.timingSafeEqual(expectedBuffer, actualBuffer);
+};
+
+const hashSessionToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+
+const parseCookies = (req) => {
+  const cookieHeader = req.headers.cookie || '';
+  return cookieHeader
+    .split(';')
+    .map(part => part.trim())
+    .filter(Boolean)
+    .reduce((acc, part) => {
+      const idx = part.indexOf('=');
+      if (idx === -1) return acc;
+      const key = part.slice(0, idx);
+      const value = decodeURIComponent(part.slice(idx + 1));
+      acc[key] = value;
+      return acc;
+    }, {});
+};
+
+const setSessionCookie = (res, token) => {
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  res.setHeader(
+    'Set-Cookie',
+    `${SESSION_COOKIE_NAME}=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${SESSION_MAX_AGE_SECONDS}${secure}`
+  );
+};
+
+const clearSessionCookie = (res) => {
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  res.setHeader(
+    'Set-Cookie',
+    `${SESSION_COOKIE_NAME}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${secure}`
+  );
+};
+
+const getSessionUser = (req) => {
+  const cookies = parseCookies(req);
+  const token = cookies[SESSION_COOKIE_NAME];
+  if (!token) return null;
+  const tokenHash = hashSessionToken(token);
+  const row = db.prepare(`
+    SELECT s.id as session_id, s.expires_at, u.id as user_id, u.username, u.role
+    FROM auth_sessions s
+    JOIN auth_users u ON u.id = s.user_id
+    WHERE s.token_hash = ?
+  `).get(tokenHash);
+  if (!row) return null;
+
+  const now = Date.now();
+  const expiresAt = new Date(row.expires_at).getTime();
+  if (!Number.isFinite(expiresAt) || expiresAt <= now) {
+    db.prepare('DELETE FROM auth_sessions WHERE id = ?').run(row.session_id);
+    return null;
+  }
+  return {
+    sessionId: row.session_id,
+    userId: row.user_id,
+    username: row.username,
+    role: row.role
+  };
+};
+
+const requireAuth = (req, res, next) => {
+  const user = getSessionUser(req);
+  if (!user) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  req.authUser = user;
+  next();
+};
+
+// One-time bootstrap for internal access users
+try {
+  const getUserByUsername = db.prepare('SELECT id FROM auth_users WHERE username = ?');
+  const insertUser = db.prepare('INSERT INTO auth_users (username, password_hash, role) VALUES (?, ?, ?)');
+
+  if (!getUserByUsername.get(ADMIN_USERNAME)) {
+    insertUser.run(ADMIN_USERNAME, hashPassword(ADMIN_PASSWORD), 'ADMIN');
+    console.log(`Created default admin user: ${ADMIN_USERNAME}`);
+  }
+  if (!getUserByUsername.get(VIEWER_USERNAME)) {
+    insertUser.run(VIEWER_USERNAME, hashPassword(VIEWER_PASSWORD), 'VIEWER');
+    console.log(`Created default viewer user: ${VIEWER_USERNAME}`);
+  }
+  db.prepare("DELETE FROM auth_sessions WHERE datetime(expires_at) <= datetime('now')").run();
+} catch (e) {
+  console.error('Auth bootstrap failed:', e.message);
+}
+
 // Migration: Add pdf_url column if not exists
 try {
   const tableInfo = db.prepare("PRAGMA table_info(contracts)").all();
@@ -77,8 +208,8 @@ try {
   console.error("Migration error for maintenance columns:", e.message);
 }
 
-// Serve static files from uploads
-app.use('/uploads', express.static(UPLOADS_DIR));
+// Serve uploaded files only for authenticated users
+app.use('/uploads', requireAuth, express.static(UPLOADS_DIR));
 
 // Configure multer for PDF uploads
 const storage = multer.diskStorage({
@@ -273,6 +404,59 @@ const getContractShape = (id) => {
 // Routes
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
+app.post('/api/auth/login', (req, res) => {
+  const username = (req.body?.username || '').toString().trim();
+  const password = (req.body?.password || '').toString();
+
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password are required' });
+  }
+
+  const user = db.prepare('SELECT id, username, password_hash, role FROM auth_users WHERE username = ?').get(username);
+  if (!user || !verifyPassword(password, user.password_hash)) {
+    return res.status(401).json({ error: 'Credenciales invalidas' });
+  }
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const tokenHash = hashSessionToken(token);
+  const expiresAt = new Date(Date.now() + SESSION_MAX_AGE_MS).toISOString();
+
+  db.prepare('INSERT INTO auth_sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)').run(tokenHash, user.id, expiresAt);
+  setSessionCookie(res, token);
+
+  return res.json({
+    ok: true,
+    user: {
+      username: user.username,
+      role: user.role
+    }
+  });
+});
+
+app.get('/api/auth/me', (req, res) => {
+  const user = getSessionUser(req);
+  if (!user) return res.status(401).json({ authenticated: false });
+
+  return res.json({
+    authenticated: true,
+    user: {
+      username: user.username,
+      role: user.role
+    }
+  });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  const cookies = parseCookies(req);
+  const token = cookies[SESSION_COOKIE_NAME];
+  if (token) {
+    const tokenHash = hashSessionToken(token);
+    db.prepare('DELETE FROM auth_sessions WHERE token_hash = ?').run(tokenHash);
+  }
+  clearSessionCookie(res);
+  return res.status(204).end();
+});
+
 const ServiceSchema = z.object({
   flags: z.record(z.string(), z.boolean()).default({}),
   periodicity: z.string().optional().nullable(),
@@ -289,6 +473,8 @@ const ContractSchema = z.object({
   pdf_url: z.string().optional().nullable(),
   servicios: z.record(z.string(), ServiceSchema).optional().default({})
 });
+
+app.use('/api/contracts', requireAuth);
 
 // List + search
 app.get('/api/contracts', (req, res) => {
