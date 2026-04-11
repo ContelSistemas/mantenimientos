@@ -293,17 +293,39 @@ const ContractSchema = z.object({
 // List + search
 app.get('/api/contracts', (req, res) => {
   const q = (req.query.q || '').toString().trim();
+  const category = (req.query.category || '').toString().trim().toUpperCase(); // New parameter for category
+
   let rows;
-  if (!q) {
-    rows = db.prepare('SELECT id FROM contracts ORDER BY cliente ASC').all();
-  } else {
-    const like = `%${q.toUpperCase()}%`;
-    rows = db.prepare(`
-      SELECT id FROM contracts
-      WHERE UPPER(obra) LIKE ? OR UPPER(nCliente) LIKE ? OR UPPER(cliente) LIKE ? OR UPPER(descripcion) LIKE ?
-      ORDER BY cliente ASC
-    `).all(like, like, like, like);
+  let query = `
+    SELECT DISTINCT c.id
+    FROM contracts c
+  `;
+  const params = [];
+  const whereClauses = [];
+
+  if (category) {
+    query += `
+      JOIN contract_services cs ON c.id = cs.contract_id
+      JOIN categories cat ON cs.category_id = cat.id
+    `;
+    whereClauses.push(`UPPER(cat.name) LIKE ?`);
+    params.push(`%${category}%`);
   }
+
+  if (q) {
+    const like = `%${q.toUpperCase()}%`;
+    whereClauses.push(`(UPPER(c.obra) LIKE ? OR UPPER(c.nCliente) LIKE ? OR UPPER(c.cliente) LIKE ? OR UPPER(c.descripcion) LIKE ?)`);
+    params.push(like, like, like, like);
+  }
+
+  if (whereClauses.length > 0) {
+    query += ` WHERE ` + whereClauses.join(' AND ');
+  }
+
+  query += ` ORDER BY c.cliente ASC`;
+
+  rows = db.prepare(query).all(...params);
+
   const data = rows.map(r => getContractShape(r.id));
   res.json(data);
 });

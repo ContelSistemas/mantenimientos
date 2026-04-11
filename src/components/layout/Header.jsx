@@ -3,7 +3,7 @@ import { SearchBar } from './SearchBar';
 import { SVC_LABELS } from '../../constants/config';
 
 export function Header({ 
-  query, setQuery, loading, error, resultsLength, dataLength, 
+  query, setQuery, categoryFilter, setCategoryFilter, loading, error, resultsLength, dataLength, 
   onNewContractClick, theme, toggleTheme,
   userRole, onAdminLogin, onLogout
 }) {
@@ -90,7 +90,13 @@ export function Header({
         </div>
       </div>
 
-      <SearchBar query={query} setQuery={setQuery} loading={loading} />
+      <SearchBar 
+        query={query} 
+        setQuery={setQuery} 
+        categoryFilter={categoryFilter} 
+        setCategoryFilter={setCategoryFilter} 
+        loading={loading} 
+      />
 
       {/* Stats + legend */}
       <div style={{ display: "flex", gap: "14px", marginTop: "10px", flexWrap: "wrap", alignItems: "center" }}>
@@ -102,7 +108,7 @@ export function Header({
           ) : (
             <>
               <span style={{ color: "var(--highlight-color)", fontWeight: 700 }}>{resultsLength}</span> resultado{resultsLength !== 1 ? "s" : ""}
-              {query && <span> de {dataLength}</span>}
+              {(query || categoryFilter) && <span> de {dataLength}</span>}
               {" · "}pulsa fila para ver servicios o editar
             </>
           )}
