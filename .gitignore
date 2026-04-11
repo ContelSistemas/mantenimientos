@@ -14,7 +14,10 @@ build/
 *.db
 *.db-shm
 *.db-wal
-server/data/
+server/data/*
+!server/data/.gitkeep
+server/uploads/*
+!server/uploads/.gitkeep
 server/server/
 
 # Environment
