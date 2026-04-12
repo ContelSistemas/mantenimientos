@@ -48,3 +48,8 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.5)
   * Reasignacion por arrastre.
   * Guardado por movimiento con rollback visual ante error.
 * El calculo de cobertura por ausencia usa la asignacion viva guardada, no un JSON estatico.
+
+6. Convencion de documentacion (importante):
+* `release.md` debe mantenerse como historial acumulativo.
+* Al documentar una nueva version, se debe anadir una nueva seccion/version sin eliminar ni sobreescribir notas de versiones anteriores.
+* Se prioriza conservar el registro historico completo de mejoras y cambios.

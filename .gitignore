@@ -39,3 +39,4 @@ docker-compose.override.yml
 
 # IA
 context.md
+.codex
