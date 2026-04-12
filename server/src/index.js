@@ -31,6 +31,66 @@ const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'produccion_2026';
 const VIEWER_USERNAME = process.env.VIEWER_USERNAME || 'viewer';
 const VIEWER_PASSWORD = process.env.VIEWER_PASSWORD || 'lectura_2026';
+const COVERAGE_TECHNICIAN_IDS = ['fe', 'jc', 'yo', 'ab'];
+const DEFAULT_COVERAGE_ASSIGNMENTS = {
+  fe: [
+    { loc: 'Parque Santiago', area: 'CCTV' },
+    { loc: 'Centro de Acogida', area: 'CCTV' },
+    { loc: 'CC Galeon', area: 'CCTV' },
+    { loc: 'CC Siam Mall', area: 'CCTV' },
+    { loc: 'Tivoli', area: 'CCTV' },
+    { loc: 'Guayarmina', area: 'CCTV' },
+    { loc: 'Inspire', area: 'Monitor.' },
+    { loc: 'Villa Cortes', area: 'Monitor.' },
+    { loc: 'Taoro Garden', area: 'Monitor.' },
+    { loc: 'Baobab', area: 'Monitor.' },
+    { loc: 'Colinas del Palmar', area: 'Monitor.' },
+    { loc: 'Gran Tacande', area: 'Monitor.' }
+  ],
+  jc: [
+    { loc: 'Taurito Princess', area: 'CCTV' },
+    { loc: 'Corales Resort', area: 'CCTV' },
+    { loc: 'Corales Villa', area: 'CCTV' },
+    { loc: 'Open Mall', area: 'CCTV' },
+    { loc: 'CC Martianez', area: 'CCTV' },
+    { loc: 'Centro de Acogida', area: 'Monitor.' },
+    { loc: 'Valle Orotava', area: 'Monitor.' },
+    { loc: 'CC Open Mall', area: 'Monitor.' },
+    { loc: 'Tagoro', area: 'Monitor.' },
+    { loc: 'Corales Villa', area: 'Monitor.' },
+    { loc: 'Gran Tigotan', area: 'Monitor.' }
+  ],
+  yo: [
+    { loc: 'CC Rosa Center', area: 'CCTV' },
+    { loc: 'Inspire', area: 'CCTV' },
+    { loc: 'Maspalomas Princess', area: 'CCTV' },
+    { loc: 'Tabaiba Princess', area: 'CCTV' },
+    { loc: 'Taoro Garden', area: 'CCTV' },
+    { loc: 'Los Cardones', area: 'Monitor.' },
+    { loc: 'CC Mogan Mall', area: 'Monitor.' },
+    { loc: 'Villa Maria', area: 'Monitor.' },
+    { loc: 'CC Martianez', area: 'Monitor.' },
+    { loc: 'CC Siam Mall', area: 'Monitor.' },
+    { loc: 'Tigotan', area: 'Monitor.' },
+    { loc: 'Parque Santiago', area: 'Monitor.' }
+  ],
+  ab: [
+    { loc: 'CC Mogan Mall', area: 'CCTV' },
+    { loc: 'Villa Maria', area: 'CCTV' },
+    { loc: 'Sand and Sea', area: 'Monitor.' },
+    { loc: 'Jardines Menceyes', area: 'Monitor.' },
+    { loc: 'Europe Park', area: 'Monitor.' },
+    { loc: 'Egatesa', area: 'Monitor.' },
+    { loc: 'Los Olivos', area: 'Monitor.' },
+    { loc: 'Tivoli', area: 'Monitor.' },
+    { loc: 'Corales Resort', area: 'Monitor.' },
+    { loc: 'Gran Tagoro', area: 'Monitor.' },
+    { loc: 'Taurito Princess', area: 'Monitor.' },
+    { loc: 'Guayarmina Princess', area: 'Monitor.' },
+    { loc: 'Maspalomas Princess', area: 'Monitor.' },
+    { loc: 'Tabaiba Princess', area: 'Monitor.' }
+  ]
+};
 
 // Ensure schema (Dynamic Refactor)
 const schema = `
@@ -76,6 +136,18 @@ CREATE TABLE IF NOT EXISTS auth_sessions (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires_at ON auth_sessions(expires_at);
+`);
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS coverage_assignments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  technician_id TEXT NOT NULL,
+  loc TEXT NOT NULL,
+  area TEXT NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  UNIQUE(loc, area)
+);
+CREATE INDEX IF NOT EXISTS idx_coverage_assignments_technician_position ON coverage_assignments(technician_id, position);
 `);
 
 const hashPassword = (password) => {
@@ -161,6 +233,13 @@ const requireAuth = (req, res, next) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   req.authUser = user;
+  next();
+};
+
+const requireAdmin = (req, res, next) => {
+  if (!req.authUser || req.authUser.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
   next();
 };
 
@@ -361,6 +440,42 @@ try {
   console.error('Seed failed:', e.message);
 }
 
+const seedCoverageAssignmentsIfEmpty = () => {
+  const count = db.prepare('SELECT COUNT(*) as count FROM coverage_assignments').get().count;
+  if (count > 0) return;
+
+  const insertCoverage = db.prepare(`
+    INSERT INTO coverage_assignments (technician_id, loc, area, position)
+    VALUES (?, ?, ?, ?)
+  `);
+
+  db.transaction(() => {
+    for (const technicianId of COVERAGE_TECHNICIAN_IDS) {
+      const rows = DEFAULT_COVERAGE_ASSIGNMENTS[technicianId] || [];
+      rows.forEach((row, index) => {
+        insertCoverage.run(technicianId, row.loc, row.area, index);
+      });
+    }
+  })();
+};
+
+const buildCoverageAssignmentsShape = () => {
+  const rows = db.prepare(`
+    SELECT technician_id, loc, area
+    FROM coverage_assignments
+    ORDER BY technician_id ASC, position ASC, id ASC
+  `).all();
+
+  const assignments = Object.fromEntries(COVERAGE_TECHNICIAN_IDS.map((id) => [id, []]));
+  for (const row of rows) {
+    if (!assignments[row.technician_id]) continue;
+    assignments[row.technician_id].push({ loc: row.loc, area: row.area });
+  }
+  return assignments;
+};
+
+seedCoverageAssignmentsIfEmpty();
+
 const getContractShape = (id) => {
   const c = db.prepare('SELECT * FROM contracts WHERE id = ?').get(id);
   if (!c) return null;
@@ -472,6 +587,59 @@ const ContractSchema = z.object({
   descripcion: z.string().optional().nullable(),
   pdf_url: z.string().optional().nullable(),
   servicios: z.record(z.string(), ServiceSchema).optional().default({})
+});
+
+const CoverageItemSchema = z.object({
+  loc: z.string().min(1),
+  area: z.string().min(1)
+});
+
+const CoverageAssignmentsSchema = z.object({
+  assignments: z.object({
+    fe: z.array(CoverageItemSchema),
+    jc: z.array(CoverageItemSchema),
+    yo: z.array(CoverageItemSchema),
+    ab: z.array(CoverageItemSchema)
+  })
+});
+
+app.use('/api/coverage', requireAuth);
+
+app.get('/api/coverage/assignments', (_req, res) => {
+  return res.json({ assignments: buildCoverageAssignmentsShape() });
+});
+
+app.put('/api/coverage/assignments', requireAdmin, (req, res) => {
+  const payload = CoverageAssignmentsSchema.parse(req.body);
+  const assignments = payload.assignments;
+
+  const dedupe = new Set();
+  for (const technicianId of COVERAGE_TECHNICIAN_IDS) {
+    for (const row of assignments[technicianId]) {
+      const key = `${row.loc}__${row.area}`;
+      if (dedupe.has(key)) {
+        return res.status(400).json({ error: `La tarea "${row.loc} / ${row.area}" esta duplicada` });
+      }
+      dedupe.add(key);
+    }
+  }
+
+  const clearCoverage = db.prepare('DELETE FROM coverage_assignments');
+  const insertCoverage = db.prepare(`
+    INSERT INTO coverage_assignments (technician_id, loc, area, position)
+    VALUES (?, ?, ?, ?)
+  `);
+
+  db.transaction(() => {
+    clearCoverage.run();
+    for (const technicianId of COVERAGE_TECHNICIAN_IDS) {
+      assignments[technicianId].forEach((row, index) => {
+        insertCoverage.run(technicianId, row.loc, row.area, index);
+      });
+    }
+  })();
+
+  return res.json({ assignments: buildCoverageAssignmentsShape() });
 });
 
 app.use('/api/contracts', requireAuth);

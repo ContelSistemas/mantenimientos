@@ -1,0 +1,50 @@
+PROMPT DE CONTEXTO: Contel-Buscador (v2.5)
+
+1. Proyecto y Stack:
+* Proposito: Gestion de mantenimientos y helpdesk para Contel Ingenieros.
+* Frontend: React (Vite) + CSS nativo (temas claro/oscuro).
+* Backend: Node.js (Express) + better-sqlite3 (modo WAL) + Zod.
+* Infraestructura: Docker Compose con Nginx; proxy inverso Traefik v2 en despliegue.
+* Persistencia: Volumenes para `/server/data` (DB) y `/server/uploads` (PDFs).
+
+2. Estado actual de la logica y base de datos:
+* Esquema principal:
+  * `contracts`: sin UNIQUE en `obra`; incluye `empresa` (CI/CS), `nCliente`, `cliente`, `descripcion`, `pdf_url`.
+  * `categories`: tabla maestra de categorias de servicio.
+  * `contract_services`: relacion N:M contrato-categoria con `services_json`, `periodicity`, `last_execution`, `next_execution`.
+* Esquema de autenticacion:
+  * `auth_users`: usuarios con roles `ADMIN` y `VIEWER`.
+  * `auth_sessions`: sesiones backend con expiracion y cookie `HttpOnly`.
+* Esquema de cobertura dinamica:
+  * `coverage_assignments`: asignacion editable de tareas (`technician_id`, `loc`, `area`, `position`).
+  * Seed automatico del reparto base si la tabla de cobertura esta vacia.
+
+3. Seguridad y acceso:
+* Login obligatorio con sesion backend (`/api/auth/login`, `/api/auth/me`, `/api/auth/logout`).
+* Recursos protegidos por sesion: `/api/contracts*`, `/uploads`, `/api/coverage/*`.
+* Autorizacion por rol:
+  * `ADMIN`: edicion completa de contratos y guardado de cobertura.
+  * `VIEWER`: consulta en solo lectura.
+* Credenciales iniciales (configurables por variables de entorno):
+  * ADMIN: `admin` / `produccion_2026`
+  * VIEWER: `viewer` / `lectura_2026`
+
+4. Funcionalidades principales vigentes:
+* Busqueda en tiempo real por obra, cliente, numero de cliente y descripcion.
+* Busqueda adicional por categoria de servicio (`category` en `/api/contracts`).
+* Gestion de contratos: alta, edicion, borrado y adjuntos PDF por contrato.
+* Edicion rapida en lista para descripcion/servicios.
+* Vista "Asignacion de Soporte" integrada en React con dos modos:
+  * Reparto normal (editable por drag & drop entre tecnicos).
+  * Simulacion por ausencia (redistribucion automatica segun carga actual).
+
+5. Estado reciente (v2.5):
+* Cobertura pasa de estatica a dinamica con persistencia en SQLite.
+* Nuevos endpoints de cobertura:
+  * `GET /api/coverage/assignments` (lectura autenticada)
+  * `PUT /api/coverage/assignments` (guardado restringido a ADMIN)
+* Frontend de cobertura con:
+  * Carga inicial desde backend.
+  * Reasignacion por arrastre.
+  * Guardado por movimiento con rollback visual ante error.
+* El calculo de cobertura por ausencia usa la asignacion viva guardada, no un JSON estatico.

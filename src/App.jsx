@@ -250,7 +250,7 @@ export default function App() {
             </div>
           )
         ) : (
-          <CoveragePlanner />
+          <CoveragePlanner userRole={userRole} />
         )}
       </div>
 

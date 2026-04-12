@@ -1,13 +1,13 @@
 export const TECHNICIANS = [
-  { id: "fe", initials: "FE", name: "Fernando", normalLoad: 12, pillClass: "pill-fe", accentVar: "var(--cov-fe)" },
-  { id: "jc", initials: "JC", name: "Juan Carlos", normalLoad: 11, pillClass: "pill-jc", accentVar: "var(--cov-jc)" },
-  { id: "yo", initials: "YO", name: "Yosbel", normalLoad: 12, pillClass: "pill-yo", accentVar: "var(--cov-yo)" },
-  { id: "ab", initials: "AB", name: "Abraham", normalLoad: 14, pillClass: "pill-ab", accentVar: "var(--cov-ab)" },
+  { id: "fe", initials: "FE", name: "Fernando", pillClass: "pill-fe", accentVar: "var(--cov-fe)" },
+  { id: "jc", initials: "JC", name: "Juan Carlos", pillClass: "pill-jc", accentVar: "var(--cov-jc)" },
+  { id: "yo", initials: "YO", name: "Yosbel", pillClass: "pill-yo", accentVar: "var(--cov-yo)" },
+  { id: "ab", initials: "AB", name: "Abraham", pillClass: "pill-ab", accentVar: "var(--cov-ab)" },
 ];
 
 export const TECHNICIAN_BY_ID = Object.fromEntries(TECHNICIANS.map((t) => [t.id, t]));
 
-export const NORMAL_ASSIGNMENTS = {
+export const DEFAULT_ASSIGNMENTS = {
   fe: [
     { loc: "Parque Santiago", area: "CCTV" },
     { loc: "Centro de Acogida", area: "CCTV" },
@@ -65,100 +65,4 @@ export const NORMAL_ASSIGNMENTS = {
     { loc: "Maspalomas Princess", area: "Monitor." },
     { loc: "Tabaiba Princess", area: "Monitor." },
   ],
-};
-
-export const ABSENCE_COVERAGE = {
-  fe: {
-    cctv: [
-      { loc: "Parque Santiago", by: "ab" },
-      { loc: "Centro de Acogida", by: "jc" },
-      { loc: "CC Galeon", by: "jc" },
-      { loc: "CC Siam Mall", by: "yo" },
-      { loc: "Tivoli", by: "ab" },
-      { loc: "Guayarmina", by: "yo" },
-    ],
-    monitoring: [
-      { loc: "Inspire", by: "jc" },
-      { loc: "Villa Cortes", by: "ab" },
-      { loc: "Taoro Garden", by: "yo" },
-      { loc: "Baobab", by: "ab" },
-      { loc: "Colinas del Palmar", by: "jc" },
-      { loc: "Gran Tacande", by: "yo" },
-    ],
-    loads: [
-      { id: "jc", width: 68, summary: "+4 -> 15" },
-      { id: "yo", width: 72, summary: "+4 -> 16" },
-      { id: "ab", width: 80, summary: "+4 -> 18" },
-    ],
-  },
-  jc: {
-    cctv: [
-      { loc: "Taurito Princess", by: "ab" },
-      { loc: "Corales Resort", by: "ab" },
-      { loc: "Corales Villa", by: "fe" },
-      { loc: "Open Mall", by: "fe" },
-      { loc: "CC Martianez", by: "yo" },
-    ],
-    monitoring: [
-      { loc: "Centro de Acogida", by: "fe" },
-      { loc: "Valle Orotava", by: "yo" },
-      { loc: "CC Open Mall", by: "yo" },
-      { loc: "Tagoro", by: "ab" },
-      { loc: "Corales Villa", by: "fe" },
-      { loc: "Gran Tigotan", by: "yo" },
-    ],
-    loads: [
-      { id: "fe", width: 72, summary: "+4 -> 16" },
-      { id: "yo", width: 72, summary: "+4 -> 16" },
-      { id: "ab", width: 76, summary: "+3 -> 17" },
-    ],
-  },
-  yo: {
-    cctv: [
-      { loc: "CC Rosa Center", by: "ab" },
-      { loc: "Inspire", by: "fe" },
-      { loc: "Maspalomas Princess", by: "jc" },
-      { loc: "Tabaiba Princess", by: "ab" },
-      { loc: "Taoro Garden", by: "fe" },
-    ],
-    monitoring: [
-      { loc: "Los Cardones", by: "ab" },
-      { loc: "CC Mogan Mall", by: "jc" },
-      { loc: "Villa Maria", by: "jc" },
-      { loc: "CC Martianez", by: "fe" },
-      { loc: "CC Siam Mall", by: "fe" },
-      { loc: "Tigotan", by: "ab" },
-      { loc: "Parque Santiago", by: "jc" },
-    ],
-    loads: [
-      { id: "fe", width: 72, summary: "+4 -> 16" },
-      { id: "jc", width: 68, summary: "+4 -> 15" },
-      { id: "ab", width: 80, summary: "+4 -> 18" },
-    ],
-  },
-  ab: {
-    cctv: [
-      { loc: "CC Mogan Mall", by: "yo" },
-      { loc: "Villa Maria", by: "fe" },
-    ],
-    monitoring: [
-      { loc: "Sand and Sea", by: "fe" },
-      { loc: "Jardines Menceyes", by: "fe" },
-      { loc: "Europe Park", by: "jc" },
-      { loc: "Egatesa", by: "jc" },
-      { loc: "Los Olivos", by: "yo" },
-      { loc: "Tivoli", by: "fe" },
-      { loc: "Corales Resort", by: "jc" },
-      { loc: "Gran Tagoro", by: "yo" },
-      { loc: "Taurito Princess", by: "jc" },
-      { loc: "Guayarmina Princess", by: "fe" },
-      { loc: "Maspalomas Princess", by: "yo" },
-      { loc: "Tabaiba Princess", by: "yo" },
-    ],
-    loads: [
-      { id: "fe", width: 76, summary: "+5 -> 17" },
-      { id: "jc", width: 72, summary: "+5 -> 16" },
-      { id: "yo", width: 76, summary: "+5 -> 17" },
-    ],
-  },
 };

@@ -15,7 +15,7 @@ Aplicación web avanzada para la gestión y visualización de contratos de mante
 - **Login Obligatorio con Sesión**: Acceso protegido con pantalla de inicio de sesión y sesión backend mediante cookie `HttpOnly`.
 - **Búsqueda General en Tiempo Real**: Filtrado dinámico por obra, cliente, nº cliente o descripción con resaltado de coincidencias.
 - **Búsqueda Avanzada por Categoría de Servicio**: Permite filtrar contratos por el nombre de la categoría de servicio (ej. "Mantenimiento Preventivo", "Helpdesk").
-- **Asignacion de Soporte (Cobertura por Ausencia)**: Nueva vista integrada en la app React para consultar la asignación normal del equipo y simular la redistribución de tareas cuando un técnico está ausente.
+- **Asignacion de Soporte Dinámica (Cobertura por Ausencia)**: Vista integrada en React con reparto editable por **drag & drop** entre técnicos y persistencia en base de datos.
 - **Gestión Completa de Contratos**: Alta, edición (vía modal) y borrado de contratos con confirmación de seguridad.
 - **Contratos en PDF**: Posibilidad de adjuntar, ver y eliminar el contrato original en PDF para cada obra. Los archivos se borran automáticamente al eliminar el contrato.
 - **Edición Rápida**: Modificación "in-place" de descripciones y estados de servicios (checkboxes) directamente desde la lista.
@@ -32,6 +32,11 @@ Aplicación web avanzada para la gestión y visualización de contratos de mante
     - Los campos de búsqueda ahora mantienen el foco durante la escritura, evitando interrupciones.
     - Los botones de borrar ('x') en los campos de búsqueda funcionan correctamente, impidiendo la navegación inesperada del navegador y facilitando la limpieza de los filtros.
 - **Manejo de Carga de Datos**: Gestión mejorada del estado de carga para los datos, proporcionando feedback visual sin afectar la interactividad de los inputs.
+- **Cobertura Dinámica con Persistencia**:
+    - Nuevo backend para cobertura: `GET /api/coverage/assignments` y `PUT /api/coverage/assignments`.
+    - Las asignaciones se guardan en SQLite (`coverage_assignments`) y se inicializan automáticamente con datos base si no existen.
+    - Reasignación de clientes en UI por arrastre entre técnicos, con rollback visual si falla el guardado.
+    - Edición restringida a rol `ADMIN`; `VIEWER` mantiene modo solo lectura.
 
 ## 🛠️ Requisitos previos
 
@@ -90,6 +95,6 @@ Al iniciar la API, la aplicación crea automáticamente la estructura de DB y ap
 
 ## 📝 Próximos Pasos
 
-- [ ] Mejorar las gráficas de estadísticas de servicios.
-- [ ] Implementar sistema de logs para cambios en contratos.
+- [ ] Añadir historial/auditoría de cambios en la Asignación de Soporte.
+- [ ] Implementar acciones rápidas de cobertura (deshacer último movimiento y reset al reparto base).
 - [ ] Exportación de listados a Excel/CSV.
