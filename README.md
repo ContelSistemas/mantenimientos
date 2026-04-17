@@ -16,6 +16,8 @@ Aplicación web avanzada para la gestión y visualización de contratos de mante
 - **Búsqueda General en Tiempo Real**: Filtrado dinámico por obra, cliente, nº cliente o descripción con resaltado de coincidencias.
 - **Búsqueda Avanzada por Categoría de Servicio**: Permite filtrar contratos por el nombre de la categoría de servicio (ej. "Mantenimiento Preventivo", "Helpdesk").
 - **Asignacion de Soporte Dinámica (Cobertura por Ausencia)**: Vista integrada en React con reparto editable por **drag & drop** entre técnicos y persistencia en base de datos.
+- **Cláusulas por Servicio (por cliente y categoría)**: Cada modalidad de servicio (ej. `COR. PRES.`) puede incluir una cláusula opcional específica del contrato.
+- **Tooltip de Condiciones Especiales**: Al pasar el ratón por un servicio en modo consulta se muestra la descripción y, si existe, su cláusula concreta.
 - **Gestión Completa de Contratos**: Alta, edición (vía modal) y borrado de contratos con confirmación de seguridad.
 - **Contratos en PDF**: Posibilidad de adjuntar, ver y eliminar el contrato original en PDF para cada obra. Los archivos se borran automáticamente al eliminar el contrato.
 - **Edición Rápida**: Modificación "in-place" de descripciones y estados de servicios (checkboxes) directamente desde la lista.
@@ -37,6 +39,10 @@ Aplicación web avanzada para la gestión y visualización de contratos de mante
     - Las asignaciones se guardan en SQLite (`coverage_assignments`) y se inicializan automáticamente con datos base si no existen.
     - Reasignación de clientes en UI por arrastre entre técnicos, con rollback visual si falla el guardado.
     - Edición restringida a rol `ADMIN`; `VIEWER` mantiene modo solo lectura.
+- **Cláusulas Dinámicas por Servicio**:
+    - Se añade persistencia de cláusulas por servicio en backend para cada contrato/categoría.
+    - Edición disponible en edición rápida y en el formulario completo (usuarios `ADMIN`).
+    - Visualización contextual mediante tooltip al hover del servicio.
 
 ## 🛠️ Requisitos previos
 

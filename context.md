@@ -1,4 +1,4 @@
-PROMPT DE CONTEXTO: Contel-Buscador (v2.5)
+PROMPT DE CONTEXTO: Contel-Buscador (v2.6)
 
 1. Proyecto y Stack:
 * Proposito: Gestion de mantenimientos y helpdesk para Contel Ingenieros.
@@ -11,7 +11,7 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.5)
 * Esquema principal:
   * `contracts`: sin UNIQUE en `obra`; incluye `empresa` (CI/CS), `nCliente`, `cliente`, `descripcion`, `pdf_url`.
   * `categories`: tabla maestra de categorias de servicio.
-  * `contract_services`: relacion N:M contrato-categoria con `services_json`, `periodicity`, `last_execution`, `next_execution`.
+  * `contract_services`: relacion N:M contrato-categoria con `services_json`, `service_clauses_json`, `periodicity`, `last_execution`, `next_execution`.
 * Esquema de autenticacion:
   * `auth_users`: usuarios con roles `ADMIN` y `VIEWER`.
   * `auth_sessions`: sesiones backend con expiracion y cookie `HttpOnly`.
@@ -34,11 +34,23 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.5)
 * Busqueda adicional por categoria de servicio (`category` en `/api/contracts`).
 * Gestion de contratos: alta, edicion, borrado y adjuntos PDF por contrato.
 * Edicion rapida en lista para descripcion/servicios.
+* Clausulas opcionales por servicio y contrato:
+  * Se pueden definir excepciones/condiciones concretas por modalidad de servicio (ej. `COR. PRES.`).
+  * Disponibles en edicion rapida y en formulario completo para rol `ADMIN`.
+  * Consulta por tooltip al pasar el raton sobre el servicio.
 * Vista "Asignacion de Soporte" integrada en React con dos modos:
   * Reparto normal (editable por drag & drop entre tecnicos).
   * Simulacion por ausencia (redistribucion automatica segun carga actual).
 
-5. Estado reciente (v2.5):
+5. Estado reciente (v2.6):
+* Clausulas por servicio integradas en el modelo de contratos:
+  * Nuevo campo persistente `service_clauses_json` en `contract_services`.
+  * Lectura/escritura integrada en `POST /api/contracts` y `PUT /api/contracts/:id`.
+  * Sanitizacion de clausulas vacias para guardar solo contenido util.
+* Frontend de contratos:
+  * Campo "Clausula (opcional)" junto a cada servicio en modo edicion.
+  * Tooltip contextual en modo consulta para leer clausulas al hover.
+* Mantiene lo entregado en v2.5:
 * Cobertura pasa de estatica a dinamica con persistencia en SQLite.
 * Nuevos endpoints de cobertura:
   * `GET /api/coverage/assignments` (lectura autenticada)

@@ -4,10 +4,28 @@ import { CAT_CONFIG } from '../../constants/config';
 import { highlight } from '../../utils/helpers';
 
 export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, onEdit, copied, userRole }) {
+  const normalizeServices = (servicios) => {
+    const cloned = JSON.parse(JSON.stringify(servicios || {}));
+    Object.values(cloned).forEach((svcConfig) => {
+      if (!svcConfig.flags) {
+        svcConfig.flags = {};
+      }
+      if (!svcConfig.clauses) {
+        svcConfig.clauses = {};
+      }
+      Object.keys(svcConfig.flags).forEach((svcKey) => {
+        if (svcConfig.clauses[svcKey] === undefined) {
+          svcConfig.clauses[svcKey] = "";
+        }
+      });
+    });
+    return cloned;
+  };
+
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     descripcion: row.descripcion || "",
-    servicios: JSON.parse(JSON.stringify(row.servicios || {}))
+    servicios: normalizeServices(row.servicios || {})
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -24,7 +42,7 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
     setIsEditing(false);
     setEditData({
       descripcion: row.descripcion || "",
-      servicios: JSON.parse(JSON.stringify(row.servicios || {}))
+      servicios: normalizeServices(row.servicios || {})
     });
   };
 
@@ -75,6 +93,22 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
         [cat]: {
           ...prev.servicios[cat],
           [field]: value
+        }
+      }
+    }));
+  };
+
+  const changeClause = (cat, svc, value) => {
+    setEditData(prev => ({
+      ...prev,
+      servicios: {
+        ...prev.servicios,
+        [cat]: {
+          ...prev.servicios[cat],
+          clauses: {
+            ...prev.servicios[cat].clauses,
+            [svc]: value
+          }
         }
       }
     }));
@@ -247,6 +281,7 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
               isEditing={isEditing}
               onToggleSvc={toggleSvc}
               onChangeMaintenance={changeMaintenance}
+              onChangeClause={changeClause}
             />
           ))}
         </div>

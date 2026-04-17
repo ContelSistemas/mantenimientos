@@ -28,16 +28,24 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
           if (mergedSvcs[cat] && !mergedSvcs[cat].flags) {
             mergedSvcs[cat] = {
               flags: mergedSvcs[cat],
+              clauses: {},
               periodicity: null,
               last_execution: null,
               next_execution: null
             };
           }
 
+          if (!mergedSvcs[cat].clauses) {
+            mergedSvcs[cat].clauses = {};
+          }
+
           // Asegurar que todos los flags estén definidos
           (CAT_CONFIG[cat].services || []).forEach(s => {
             if (mergedSvcs[cat].flags[s] === undefined) {
               mergedSvcs[cat].flags[s] = false;
+            }
+            if (mergedSvcs[cat].clauses[s] === undefined) {
+              mergedSvcs[cat].clauses[s] = "";
             }
           });
         }
@@ -69,12 +77,14 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
         // Inicializar con los servicios definidos para esta categoría
         const initialSvcs = {
           flags: {},
+          clauses: {},
           periodicity: null,
           last_execution: null,
           next_execution: null
         };
         (CAT_CONFIG[cat].services || []).forEach(s => {
           initialSvcs.flags[s] = false;
+          initialSvcs.clauses[s] = "";
         });
         nextSvcs[cat] = initialSvcs;
         setFormData({ ...formData, servicios: nextSvcs });
@@ -107,6 +117,22 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
         [cat]: {
           ...prev.servicios[cat],
           [field]: value
+        }
+      }
+    }));
+  };
+
+  const handleChangeClause = (cat, svc, value) => {
+    setFormData(prev => ({
+      ...prev,
+      servicios: {
+        ...prev.servicios,
+        [cat]: {
+          ...prev.servicios[cat],
+          clauses: {
+            ...prev.servicios[cat].clauses,
+            [svc]: value
+          }
         }
       }
     }));
@@ -328,6 +354,7 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
                   isEditing={true}
                   onToggleSvc={handleToggleSvc}
                   onChangeMaintenance={handleChangeMaintenance}
+                  onChangeClause={handleChangeClause}
                 />
               ))}
             </div>

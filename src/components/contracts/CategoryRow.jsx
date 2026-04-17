@@ -1,11 +1,12 @@
 import React from 'react';
 import { CAT_CONFIG, SVC_LABELS, PERIODICITY_OPTIONS } from '../../constants/config';
 
-export function CategoryRow({ cat, svcs, isEditing, onToggleSvc, onChangeMaintenance }) {
+export function CategoryRow({ cat, svcs, isEditing, onToggleSvc, onChangeMaintenance, onChangeClause }) {
   const cfg = CAT_CONFIG[cat] || { icon: "⚙️", color: "#94a3b8" };
   
   // Handle both old and new structure for safety during migration
   const flags = svcs?.flags || svcs || {};
+  const clauses = svcs?.clauses || {};
   const periodicity = svcs?.periodicity || "";
   const last_execution = svcs?.last_execution || "";
   const next_execution = svcs?.next_execution || "";
@@ -24,31 +25,50 @@ export function CategoryRow({ cat, svcs, isEditing, onToggleSvc, onChangeMainten
           {Object.entries(flags).map(([svc, active]) => {
             const label = SVC_LABELS[svc]?.label || svc;
             const short = SVC_LABELS[svc]?.short || svc;
+            const clauseText = (clauses[svc] || "").trim();
+            const tooltipText = clauseText ? `${label}\nCláusula: ${clauseText}` : label;
             
             if (isEditing) {
               return (
-                <label key={svc} style={{
-                  display: "flex", alignItems: "center", gap: "4px",
-                  fontSize: "9px", fontWeight: 700, cursor: "pointer",
-                  padding: "2px 6px", borderRadius: "3px",
-                  background: active ? cfg.color + "25" : "var(--svc-inactive-bg)",
-                  color: active ? cfg.color : "var(--svc-inactive-text)",
-                  border: `1px solid ${active ? cfg.color + "55" : "var(--svc-inactive-border)"}`,
-                  opacity: active ? 1 : 0.6,
-                }}>
+                <div key={svc} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                  <label title={tooltipText} style={{
+                    display: "flex", alignItems: "center", gap: "4px",
+                    fontSize: "9px", fontWeight: 700, cursor: "pointer",
+                    padding: "2px 6px", borderRadius: "3px",
+                    background: active ? cfg.color + "25" : "var(--svc-inactive-bg)",
+                    color: active ? cfg.color : "var(--svc-inactive-text)",
+                    border: `1px solid ${active ? cfg.color + "55" : "var(--svc-inactive-border)"}`,
+                    opacity: active ? 1 : 0.6,
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={active}
+                      onChange={() => onToggleSvc(cat, svc)}
+                      style={{ margin: 0, width: "10px", height: "10px" }}
+                    />
+                    {short}
+                  </label>
                   <input
-                    type="checkbox"
-                    checked={active}
-                    onChange={() => onToggleSvc(cat, svc)}
-                    style={{ margin: 0, width: "10px", height: "10px" }}
+                    type="text"
+                    value={clauses[svc] || ""}
+                    onChange={(e) => onChangeClause?.(cat, svc, e.target.value)}
+                    placeholder="Cláusula (opcional)"
+                    style={{
+                      width: "180px",
+                      background: "var(--input-bg)",
+                      border: "1px solid var(--input-border)",
+                      borderRadius: "4px",
+                      color: "var(--text-color)",
+                      fontSize: "10px",
+                      padding: "2px 6px"
+                    }}
                   />
-                  {short}
-                </label>
+                </div>
               );
             }
             
             return (
-              <span key={svc} title={label} style={{
+              <span key={svc} title={tooltipText} style={{
                 fontSize: "9px", fontWeight: active ? 700 : 500, letterSpacing: "0.05em",
                 padding: "2px 6px", borderRadius: "3px",
                 background: active ? cfg.color + "25" : "var(--svc-inactive-bg)",

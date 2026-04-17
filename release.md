@@ -1,5 +1,36 @@
 # Notas de Lanzamiento
 
+## Version 2.6 (17 de abril de 2026)
+
+### Nuevas Funcionalidades
+
+- **Clausulas por servicio y cliente**:
+  - Ahora cada modalidad de servicio dentro de una categoria puede tener una clausula opcional especifica por contrato.
+  - Ejemplo de uso: anotar excepciones como "en Correctivo no incluye limpieza de camaras".
+  - Las clausulas se editan junto a cada servicio en edicion rapida y en el formulario completo.
+
+- **Tooltip contextual de clausulas**:
+  - En vista de consulta, al pasar el raton por la etiqueta del servicio se muestra la descripcion del servicio y, si existe, su clausula asociada.
+  - Permite consultar condiciones especiales sin abrir modales adicionales.
+
+### Detalles Tecnicos Clave
+
+- **Backend (`server/src/index.js`)**:
+  - Nueva columna `service_clauses_json` en `contract_services`.
+  - Migracion automatica para bases existentes (`ALTER TABLE` si la columna no existe).
+  - API de contratos actualizada para leer/escribir clausulas en `POST /api/contracts` y `PUT /api/contracts/:id`.
+  - Sanitizacion de clausulas vacias para persistir solo contenido util.
+
+- **Frontend (`src/components/contracts/CategoryRow.jsx`)**:
+  - Campo de texto "Clausula (opcional)" por cada servicio en modo edicion.
+  - Tooltip enriquecido en modo lectura con clausula por servicio.
+
+- **Frontend (`src/components/contracts/ContractRow.jsx`, `src/components/contracts/ContractForm.jsx`)**:
+  - Normalizacion de estructura de servicios para compatibilidad con datos antiguos sin clausulas.
+  - Soporte completo de edicion/guardado de clausulas desde ambas rutas de edicion.
+
+---
+
 ## Version 2.5 (12 de abril de 2026)
 
 ### Nuevas Funcionalidades
