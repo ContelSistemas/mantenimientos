@@ -1,5 +1,24 @@
 # Notas de Lanzamiento
 
+## Version 2.6.1 (21 de abril de 2026)
+
+### Mejoras de Interfaz (Frontend)
+
+- **Asignacion normal con visualizacion en una sola linea**:
+  - Se ajusta la rejilla de tarjetas de tecnicos en "Ver asignacion normal" para facilitar comparacion lateral de carga.
+  - Nuevo comportamiento responsive:
+    - Desktop: 4 columnas.
+    - Tablet: 3 columnas.
+    - Movil: 1 columna.
+
+### Detalles Tecnicos Clave
+
+- **Frontend (`src/components/coverage/coverage.css`)**:
+  - Actualizacion de `grid-template-columns` en `.cov-normal-grid`.
+  - Ajuste de `@media` para conservar legibilidad en tablet y movil.
+
+---
+
 ## Version 2.6 (17 de abril de 2026)
 
 ### Nuevas Funcionalidades
