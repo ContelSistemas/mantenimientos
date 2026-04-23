@@ -2,6 +2,11 @@
 
 Aplicación web avanzada para la gestión y visualización de contratos de mantenimiento, servicios de monitorización y helpdesk. Desarrollada con **React**, **Node.js (Express)** y **SQLite**, orquestada mediante **Docker**.
 
+Documentación del proyecto:
+
+- `context.md` (contexto técnico y funcional)
+- `release.md` (historial de versiones)
+
 ## 🚀 Arquitectura y Tecnologías
 
 - **Frontend**: React (Vite) + CSS nativo. Interfaz modularizada para alta mantenibilidad.
@@ -57,8 +62,18 @@ Para levantar el proyecto completo o aplicar actualizaciones, ejecuta:
 docker compose up -d --build
 ```
 
-- **Frontend**: [http://mantenimientos.domdoklab.me](http://mantenimientos.domdoklab.me) (o localhost en desarrollo)
-- **API**: [http://localhost:3000/api/contracts](http://localhost:3000/api/contracts)
+Notas sobre entornos:
+
+- En despliegue con Traefik: el router usa el dominio `mantenimientos.domdoklab.me` (ver `docker-compose.yml`).
+- Si no tienes Traefik, crea la red externa requerida: `docker network create traefik_default`.
+- En desarrollo local: `docker-compose.override.yml` expone `8080:80` (app) y `3000:3000` (API).
+
+URLs habituales:
+
+- **App (Traefik/prod)**: [http://mantenimientos.domdoklab.me](http://mantenimientos.domdoklab.me)
+- **App (local)**: http://localhost:8080
+- **API vía proxy Nginx (recomendado)**: http://localhost:8080/api/contracts
+- **API directa (local)**: http://localhost:3000/api/contracts
 
 ## 🔐 Acceso inicial (entorno interno)
 
@@ -98,6 +113,7 @@ Al iniciar la API, la aplicación crea automáticamente la estructura de DB y ap
 │   ├── data/            # Base de datos SQLite persistida
 │   └── uploads/         # Almacenamiento persistente de contratos en PDF
 └── docker-compose.yml   # Orquestación de contenedores y volúmenes
+```
 
 ## 📝 Próximos Pasos
 

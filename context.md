@@ -1,4 +1,4 @@
-PROMPT DE CONTEXTO: Contel-Buscador (v2.6)
+PROMPT DE CONTEXTO: Contel-Buscador (v2.6.1)
 
 1. Proyecto y Stack:
 * Proposito: Gestion de mantenimientos y helpdesk para Contel Ingenieros.
@@ -51,17 +51,23 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.6)
   * Campo "Clausula (opcional)" junto a cada servicio en modo edicion.
   * Tooltip contextual en modo consulta para leer clausulas al hover.
 * Mantiene lo entregado en v2.5:
-* Cobertura pasa de estatica a dinamica con persistencia en SQLite.
-* Nuevos endpoints de cobertura:
-  * `GET /api/coverage/assignments` (lectura autenticada)
-  * `PUT /api/coverage/assignments` (guardado restringido a ADMIN)
-* Frontend de cobertura con:
-  * Carga inicial desde backend.
-  * Reasignacion por arrastre.
-  * Guardado por movimiento con rollback visual ante error.
-* El calculo de cobertura por ausencia usa la asignacion viva guardada, no un JSON estatico.
+  * Cobertura pasa de estatica a dinamica con persistencia en SQLite.
+  * Nuevos endpoints de cobertura:
+    * `GET /api/coverage/assignments` (lectura autenticada)
+    * `PUT /api/coverage/assignments` (guardado restringido a ADMIN)
+  * Frontend de cobertura con:
+    * Carga inicial desde backend.
+    * Reasignacion por arrastre.
+    * Guardado por movimiento con rollback visual ante error.
+  * El calculo de cobertura por ausencia usa la asignacion viva guardada, no un JSON estatico.
 
-6. Convencion de documentacion (importante):
+6. Estado reciente (v2.6.1 - UI):
+* Ajuste de rejilla en "Ver asignacion normal" para mostrar mejor la carga en una sola linea:
+  * Desktop: 4 columnas.
+  * Tablet: 3 columnas.
+  * Movil: 1 columna.
+
+7. Convencion de documentacion (importante):
 * `release.md` debe mantenerse como historial acumulativo.
 * Al documentar una nueva version, se debe anadir una nueva seccion/version sin eliminar ni sobreescribir notas de versiones anteriores.
 * Se prioriza conservar el registro historico completo de mejoras y cambios.
