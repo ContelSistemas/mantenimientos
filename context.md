@@ -1,4 +1,4 @@
-PROMPT DE CONTEXTO: Contel-Buscador (v2.7.0)
+PROMPT DE CONTEXTO: Contel-Buscador (v2.8.0)
 
 1. Proyecto y Stack:
 * Proposito: Gestion de mantenimientos y helpdesk para Contel Ingenieros.
@@ -11,7 +11,7 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.7.0)
 
 2. Estado actual de la logica y base de datos:
 * Esquema principal:
-  * `contracts`: sin UNIQUE en `obra`; incluye `empresa` (CI/CS), `nCliente`, `cliente`, `descripcion`, `pdf_url` (contrato) y `budget_pdf_url` (presupuesto).
+  * `contracts`: sin UNIQUE en `obra`; incluye `empresa` (CI/CS), `nCliente`, `cliente`, `descripcion`, `start_date`, `end_date`, `pdf_url` (contrato) y `budget_pdf_url` (presupuesto).
   * `categories`: tabla maestra de categorias de servicio.
   * `contract_services`: relacion N:M contrato-categoria con `services_json`, `service_clauses_json`, `periodicity`, `last_execution`, `next_execution`.
 * Esquema de autenticacion:
@@ -35,6 +35,9 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.7.0)
 * Busqueda en tiempo real por obra, cliente, numero de cliente y descripcion.
 * Busqueda adicional por categoria de servicio (`category` en `/api/contracts`).
 * Gestion de contratos: alta, edicion, borrado y adjuntos PDF por contrato.
+* Fechas de contrato por ficha:
+  * Cada contrato admite `fecha de inicio` y `fecha de finalizacion`.
+  * Las fechas se editan en el formulario y se muestran en la tarjeta de contrato.
 * Adjuntos PDF dobles por contrato:
   * Contrato: `/api/contracts/:id/pdf`
   * Presupuesto: `/api/contracts/:id/budget-pdf`
@@ -47,7 +50,13 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.7.0)
   * Reparto normal (editable por drag & drop entre tecnicos).
   * Simulacion por ausencia (redistribucion automatica segun carga actual).
 
-5. Estado reciente (v2.6):
+5. Estado reciente (v2.8):
+* Fechas de inicio/fin integradas en contratos:
+  * Nuevos campos persistentes `start_date` y `end_date` en `contracts` (migracion automatica).
+  * API de contratos actualizada para leer/escribir fechas en `POST /api/contracts` y `PUT /api/contracts/:id`.
+  * Frontend actualizado con inputs de fecha en formulario y visualizacion compacta en cada ficha.
+
+6. Estado reciente (v2.6):
 * Clausulas por servicio integradas en el modelo de contratos:
   * Nuevo campo persistente `service_clauses_json` en `contract_services`.
   * Lectura/escritura integrada en `POST /api/contracts` y `PUT /api/contracts/:id`.
@@ -66,13 +75,13 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.7.0)
     * Guardado por movimiento con rollback visual ante error.
   * El calculo de cobertura por ausencia usa la asignacion viva guardada, no un JSON estatico.
 
-6. Estado reciente (v2.6.1 - UI):
+7. Estado reciente (v2.6.1 - UI):
 * Ajuste de rejilla en "Ver asignacion normal" para mostrar mejor la carga en una sola linea:
   * Desktop: 4 columnas.
   * Tablet: 3 columnas.
   * Movil: 1 columna.
 
-7. Convencion de documentacion (importante):
+8. Convencion de documentacion (importante):
 * `release.md` debe mantenerse como historial acumulativo.
 * Al documentar una nueva version, se debe anadir una nueva seccion/version sin eliminar ni sobreescribir notas de versiones anteriores.
 * Se prioriza conservar el registro historico completo de mejoras y cambios.

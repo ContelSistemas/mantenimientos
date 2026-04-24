@@ -9,6 +9,8 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
     nCliente: "",
     cliente: "",
     descripcion: "",
+    start_date: "",
+    end_date: "",
     servicios: {}
   });
   const [isSaving, setIsSaving] = useState(false);
@@ -59,6 +61,8 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
         nCliente: initialData.nCliente || "",
         cliente: initialData.cliente || "",
         descripcion: initialData.descripcion || "",
+        start_date: initialData.start_date || "",
+        end_date: initialData.end_date || "",
         servicios: mergedSvcs
       });
       setSelectedCats(Object.keys(initialData.servicios || {}));
@@ -195,11 +199,16 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
       const isEdit = !!initialData?.id;
       const url = isEdit ? `/api/contracts/${initialData.id}` : '/api/contracts';
       const method = isEdit ? 'PUT' : 'POST';
+      const payload = {
+        ...formData,
+        start_date: formData.start_date || null,
+        end_date: formData.end_date || null
+      };
 
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       if (!res.ok) throw new Error("Error al guardar");
       
@@ -286,6 +295,26 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
                 required
                 value={formData.nCliente}
                 onChange={e => setFormData({ ...formData, nCliente: e.target.value })}
+                style={{ width: "100%", background: "var(--input-bg)", border: "1px solid var(--input-border)", borderRadius: "6px", color: "var(--text-color)", padding: "8px", fontSize: "13px" }}
+              />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div>
+              <label style={{ display: "block", fontSize: "10px", color: "var(--stats-color)", marginBottom: "4px", textTransform: "uppercase" }}>Fecha de inicio</label>
+              <input
+                type="date"
+                value={formData.start_date}
+                onChange={e => setFormData({ ...formData, start_date: e.target.value })}
+                style={{ width: "100%", background: "var(--input-bg)", border: "1px solid var(--input-border)", borderRadius: "6px", color: "var(--text-color)", padding: "8px", fontSize: "13px" }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "10px", color: "var(--stats-color)", marginBottom: "4px", textTransform: "uppercase" }}>Fecha de finalización</label>
+              <input
+                type="date"
+                value={formData.end_date}
+                onChange={e => setFormData({ ...formData, end_date: e.target.value })}
                 style={{ width: "100%", background: "var(--input-bg)", border: "1px solid var(--input-border)", borderRadius: "6px", color: "var(--text-color)", padding: "8px", fontSize: "13px" }}
               />
             </div>

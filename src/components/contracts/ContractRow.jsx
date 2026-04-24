@@ -4,6 +4,13 @@ import { CAT_CONFIG } from '../../constants/config';
 import { highlight } from '../../utils/helpers';
 
 export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, onEdit, copied, userRole }) {
+  const formatContractDate = (value) => {
+    if (!value) return null;
+    const parts = value.split('-');
+    if (parts.length !== 3) return value;
+    const [year, month, day] = parts;
+    return `${day}/${month}/${year}`;
+  };
   const normalizeServices = (servicios) => {
     const cloned = JSON.parse(JSON.stringify(servicios || {}));
     Object.values(cloned).forEach((svcConfig) => {
@@ -30,6 +37,9 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
   const [isSaving, setIsSaving] = useState(false);
 
   const cats = Object.keys(row.servicios || {});
+  const startDateLabel = formatContractDate(row.start_date);
+  const endDateLabel = formatContractDate(row.end_date);
+  const hasContractDates = Boolean(startDateLabel || endDateLabel);
 
   const handleEditClick = (e) => {
     e.stopPropagation();
@@ -181,6 +191,13 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
                 {highlight(row.descripcion, query)}
               </div>
             )
+          )}
+          {hasContractDates && (
+            <div style={{ fontSize: "10px", color: "var(--stats-secondary)", marginTop: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {startDateLabel ? `Inicio: ${startDateLabel}` : 'Inicio: —'}
+              {' · '}
+              {endDateLabel ? `Fin: ${endDateLabel}` : 'Fin: —'}
+            </div>
           )}
         </div>
         {/* Icons + actions */}

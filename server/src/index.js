@@ -116,6 +116,8 @@ CREATE TABLE IF NOT EXISTS contracts (
   nCliente TEXT NOT NULL,
   cliente TEXT NOT NULL,
   descripcion TEXT,
+  start_date TEXT,
+  end_date TEXT,
   pdf_url TEXT,
   budget_pdf_url TEXT
 );
@@ -302,6 +304,23 @@ try {
   console.error("Migration error for budget_pdf_url:", e.message);
 }
 
+// Migration: Add contract date columns if not exists
+try {
+  const tableInfo = db.prepare("PRAGMA table_info(contracts)").all();
+  const hasStartDate = tableInfo.some(c => c.name === 'start_date');
+  const hasEndDate = tableInfo.some(c => c.name === 'end_date');
+  if (!hasStartDate) {
+    console.log("Migrating contracts table to add start_date...");
+    db.exec("ALTER TABLE contracts ADD COLUMN start_date TEXT");
+  }
+  if (!hasEndDate) {
+    console.log("Migrating contracts table to add end_date...");
+    db.exec("ALTER TABLE contracts ADD COLUMN end_date TEXT");
+  }
+} catch (e) {
+  console.error("Migration error for contract dates:", e.message);
+}
+
 // Migration: Add maintenance columns to contract_services if not exists
 try {
   const tableInfo = db.prepare("PRAGMA table_info(contract_services)").all();
@@ -374,6 +393,8 @@ try {
       db.transaction(() => {
         const oldTableInfo = db.prepare("PRAGMA table_info(contracts)").all();
         const oldHasEmpresa = oldTableInfo.some(c => c.name === 'empresa');
+        const oldHasStartDate = oldTableInfo.some(c => c.name === 'start_date');
+        const oldHasEndDate = oldTableInfo.some(c => c.name === 'end_date');
         const oldHasPdfUrl = oldTableInfo.some(c => c.name === 'pdf_url');
         const oldHasBudgetPdfUrl = oldTableInfo.some(c => c.name === 'budget_pdf_url');
 
@@ -386,6 +407,8 @@ try {
             nCliente TEXT NOT NULL,
             cliente TEXT NOT NULL,
             descripcion TEXT,
+            start_date TEXT,
+            end_date TEXT,
             pdf_url TEXT,
             budget_pdf_url TEXT
           )
@@ -393,11 +416,13 @@ try {
 
         // Copy data (compatible con DBs antiguas)
         const empresaExpr = oldHasEmpresa ? 'empresa' : "'CI'";
+        const startDateExpr = oldHasStartDate ? 'start_date' : 'NULL';
+        const endDateExpr = oldHasEndDate ? 'end_date' : 'NULL';
         const pdfUrlExpr = oldHasPdfUrl ? 'pdf_url' : 'NULL';
         const budgetPdfUrlExpr = oldHasBudgetPdfUrl ? 'budget_pdf_url' : 'NULL';
         db.exec(`
-          INSERT INTO contracts_new (id, obra, empresa, nCliente, cliente, descripcion, pdf_url, budget_pdf_url)
-          SELECT id, obra, ${empresaExpr}, nCliente, cliente, descripcion, ${pdfUrlExpr}, ${budgetPdfUrlExpr} FROM contracts
+          INSERT INTO contracts_new (id, obra, empresa, nCliente, cliente, descripcion, start_date, end_date, pdf_url, budget_pdf_url)
+          SELECT id, obra, ${empresaExpr}, nCliente, cliente, descripcion, ${startDateExpr}, ${endDateExpr}, ${pdfUrlExpr}, ${budgetPdfUrlExpr} FROM contracts
         `);
 
         // Swap tables
@@ -411,7 +436,7 @@ try {
     }
   }
 } catch (e) {
-  console.error("Migration error for contracts table:", e.message);
+  console.error("Migration error for contract dates:", e.message);
 }
 
 // Migration: Check if old columns exist and migrate to JSON
@@ -576,6 +601,8 @@ const getContractShape = (id) => {
     nCliente: c.nCliente,
     cliente: c.cliente,
     descripcion: c.descripcion,
+    start_date: c.start_date,
+    end_date: c.end_date,
     pdf_url: c.pdf_url,
     budget_pdf_url: c.budget_pdf_url,
     servicios,
@@ -652,6 +679,8 @@ const ContractSchema = z.object({
   nCliente: z.string().min(1),
   cliente: z.string().min(1),
   descripcion: z.string().optional().nullable(),
+  start_date: z.string().optional().nullable(),
+  end_date: z.string().optional().nullable(),
   pdf_url: z.string().optional().nullable(),
   budget_pdf_url: z.string().optional().nullable(),
   servicios: z.record(z.string(), ServiceSchema).optional().default({})
@@ -755,13 +784,15 @@ app.get('/api/contracts', (req, res) => {
 // Create
 app.post('/api/contracts', (req, res) => {
   const body = ContractSchema.parse(req.body);
-  const insertC = db.prepare('INSERT INTO contracts (obra, empresa, nCliente, cliente, descripcion, pdf_url, budget_pdf_url) VALUES (?, ?, ?, ?, ?, ?, ?)');
+  const insertC = db.prepare('INSERT INTO contracts (obra, empresa, nCliente, cliente, descripcion, start_date, end_date, pdf_url, budget_pdf_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
   const result = insertC.run(
     body.obra,
     body.empresa,
     body.nCliente,
     body.cliente,
     body.descripcion ?? null,
+    body.start_date ?? null,
+    body.end_date ?? null,
     body.pdf_url ?? null,
     body.budget_pdf_url ?? null
   );
@@ -812,6 +843,8 @@ app.put('/api/contracts/:id', (req, res) => {
           nCliente = COALESCE(?, nCliente), 
           cliente = COALESCE(?, cliente), 
           descripcion = COALESCE(?, descripcion),
+          start_date = COALESCE(?, start_date),
+          end_date = COALESCE(?, end_date),
           pdf_url = COALESCE(?, pdf_url),
           budget_pdf_url = COALESCE(?, budget_pdf_url)
       WHERE id = ?
@@ -821,6 +854,8 @@ app.put('/api/contracts/:id', (req, res) => {
       data.nCliente ?? null,
       data.cliente ?? null,
       data.descripcion ?? null,
+      data.start_date ?? null,
+      data.end_date ?? null,
       data.pdf_url ?? null,
       data.budget_pdf_url ?? null,
       id

@@ -1,4 +1,24 @@
 # Notas de Lanzamiento
+## Version 2.8 (24 de abril de 2026)
+
+### Nuevas Funcionalidades
+
+- **Fechas de contrato por ficha (Inicio + Finalizacion)**:
+  - Cada contrato puede guardar una **fecha de inicio** y una **fecha de finalizacion**.
+  - Las fechas se muestran directamente en la tarjeta para consulta rapida.
+
+### Detalles Tecnicos Clave
+
+- **Backend (`server/src/index.js`)**:
+  - Nuevas columnas en `contracts`: `start_date` y `end_date` (con migracion automatica para bases existentes).
+  - `ContractSchema` actualizado para validar y aceptar ambos campos.
+  - Endpoints `POST /api/contracts` y `PUT /api/contracts/:id` actualizados para persistir fechas.
+
+- **Frontend (`src/components/contracts/ContractForm.jsx`, `src/components/contracts/ContractRow.jsx`)**:
+  - Formulario de contrato con nuevos inputs tipo fecha (inicio/fin).
+  - Render de fechas en la ficha en formato legible (`dd/mm/yyyy`).
+
+---
 
 ## Version 2.7 (24 de abril de 2026)
 

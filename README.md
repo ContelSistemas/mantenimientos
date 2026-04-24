@@ -24,6 +24,7 @@ Documentación del proyecto:
 - **Cláusulas por Servicio (por cliente y categoría)**: Cada modalidad de servicio (ej. `COR. PRES.`) puede incluir una cláusula opcional específica del contrato.
 - **Tooltip de Condiciones Especiales**: Al pasar el ratón por un servicio en modo consulta se muestra la descripción y, si existe, su cláusula concreta.
 - **Gestión Completa de Contratos**: Alta, edición (vía modal) y borrado de contratos con confirmación de seguridad.
+- **Fechas de Vigencia del Contrato**: Cada ficha permite registrar y visualizar **fecha de inicio** y **fecha de finalización** del contrato.
 - **Documentos en PDF (Contrato + Presupuesto)**: Posibilidad de adjuntar, ver y eliminar ambos PDFs por contrato. Los archivos se borran automáticamente al eliminar el contrato.
 - **Edición Rápida**: Modificación "in-place" de descripciones y estados de servicios (checkboxes) directamente desde la lista.
 - **Interfaz Responsiva**: Diseño moderno con temática oscura/clara, iconos por categoría y feedback visual de copiado.
@@ -48,6 +49,9 @@ Documentación del proyecto:
     - Se añade persistencia de cláusulas por servicio en backend para cada contrato/categoría.
     - Edición disponible en edición rápida y en el formulario completo (usuarios `ADMIN`).
     - Visualización contextual mediante tooltip al hover del servicio.
+- **Fechas de Contrato (Inicio/Fin)**:
+    - Nuevos campos de fecha en la ficha de contrato para controlar vigencia.
+    - Persistencia en backend y visualización directa en la tarjeta de cada contrato.
 
 ## 🛠️ Requisitos previos
 
