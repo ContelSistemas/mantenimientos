@@ -14,8 +14,10 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedCats, setSelectedCats] = useState([]);
-  const [pdfFile, setPdfFile] = useState(null);
-  const fileInputRef = useRef(null);
+  const [contractPdfFile, setContractPdfFile] = useState(null);
+  const [budgetPdfFile, setBudgetPdfFile] = useState(null);
+  const contractFileInputRef = useRef(null);
+  const budgetFileInputRef = useRef(null);
 
   useEffect(() => {
     if (initialData) {
@@ -159,10 +161,21 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
     }
   };
 
-  const handleRemovePdf = async () => {
-    if (!window.confirm("¿Eliminar el PDF adjunto?")) return;
+  const handleRemoveContractPdf = async () => {
+    if (!window.confirm("¿Eliminar el PDF del contrato?")) return;
     try {
       await fetch(`/api/contracts/${initialData.id}/pdf`, { method: 'DELETE' });
+      onSave();
+      onClose(); // Cerrar para refrescar
+    } catch (err) {
+      alert("Error al eliminar el PDF");
+    }
+  };
+
+  const handleRemoveBudgetPdf = async () => {
+    if (!window.confirm("¿Eliminar el PDF del presupuesto?")) return;
+    try {
+      await fetch(`/api/contracts/${initialData.id}/budget-pdf`, { method: 'DELETE' });
       onSave();
       onClose(); // Cerrar para refrescar
     } catch (err) {
@@ -193,15 +206,25 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
       const savedContract = await res.json();
       const contractId = savedContract.id;
 
-      // Subir PDF si hay uno seleccionado
-      if (pdfFile) {
+      // Subir PDFs si hay seleccionados
+      if (contractPdfFile) {
         const pdfFormData = new FormData();
-        pdfFormData.append('pdf', pdfFile);
+        pdfFormData.append('pdf', contractPdfFile);
         const pdfRes = await fetch(`/api/contracts/${contractId}/pdf`, {
           method: 'POST',
           body: pdfFormData
         });
         if (!pdfRes.ok) alert("El contrato se guardó pero hubo un error al subir el PDF");
+      }
+
+      if (budgetPdfFile) {
+        const pdfFormData = new FormData();
+        pdfFormData.append('pdf', budgetPdfFile);
+        const pdfRes = await fetch(`/api/contracts/${contractId}/budget-pdf`, {
+          method: 'POST',
+          body: pdfFormData
+        });
+        if (!pdfRes.ok) alert("El contrato se guardó pero hubo un error al subir el PDF del presupuesto");
       }
 
       onSave();
@@ -287,34 +310,70 @@ export function ContractForm({ onClose, onSave, initialData = null }) {
             />
           </div>
 
-          {/* PDF Section */}
+          {/* PDFs Section */}
           <div style={{ background: "var(--input-bg)", padding: "12px", borderRadius: "8px", border: "1px dashed var(--input-border)" }}>
-            <label style={{ display: "block", fontSize: "10px", color: "var(--stats-color)", marginBottom: "8px", textTransform: "uppercase" }}>Documento PDF (Contrato)</label>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <label style={{ display: "block", fontSize: "10px", color: "var(--stats-color)", marginBottom: "8px", textTransform: "uppercase" }}>Documentos PDF</label>
+
+            {/* Contrato */}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
               <input
                 type="file"
                 accept=".pdf"
-                ref={fileInputRef}
-                onChange={e => setPdfFile(e.target.files[0])}
+                ref={contractFileInputRef}
+                onChange={e => setContractPdfFile(e.target.files[0])}
                 style={{ display: "none" }}
               />
               <button
                 type="button"
-                onClick={() => fileInputRef.current.click()}
+                onClick={() => contractFileInputRef.current.click()}
                 style={{
                   padding: "6px 12px", borderRadius: "6px", background: "var(--card-bg-expanded)",
                   color: "var(--text-color)", border: "1px solid var(--card-border)", fontSize: "12px", cursor: "pointer"
                 }}
               >
-                {pdfFile ? "Cambiar PDF" : "Seleccionar PDF"}
+                {contractPdfFile ? "Cambiar Contrato" : "Subir Contrato"}
               </button>
-              {pdfFile && <span style={{ fontSize: "11px", color: "var(--highlight-color)" }}>{pdfFile.name}</span>}
-              {!pdfFile && initialData?.pdf_url && (
+              {contractPdfFile && <span style={{ fontSize: "11px", color: "var(--highlight-color)" }}>{contractPdfFile.name}</span>}
+              {!contractPdfFile && initialData?.pdf_url && (
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ fontSize: "11px", color: "#10b981" }}>✓ PDF cargado</span>
+                  <span style={{ fontSize: "11px", color: "#10b981" }}>✓ Contrato cargado</span>
                   <button 
                     type="button" 
-                    onClick={handleRemovePdf}
+                    onClick={handleRemoveContractPdf}
+                    style={{ background: "none", border: "none", color: "#ef4444", fontSize: "10px", cursor: "pointer", textDecoration: "underline" }}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Presupuesto */}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <input
+                type="file"
+                accept=".pdf"
+                ref={budgetFileInputRef}
+                onChange={e => setBudgetPdfFile(e.target.files[0])}
+                style={{ display: "none" }}
+              />
+              <button
+                type="button"
+                onClick={() => budgetFileInputRef.current.click()}
+                style={{
+                  padding: "6px 12px", borderRadius: "6px", background: "var(--card-bg-expanded)",
+                  color: "var(--text-color)", border: "1px solid var(--card-border)", fontSize: "12px", cursor: "pointer"
+                }}
+              >
+                {budgetPdfFile ? "Cambiar Presupuesto" : "Subir Presupuesto"}
+              </button>
+              {budgetPdfFile && <span style={{ fontSize: "11px", color: "var(--highlight-color)" }}>{budgetPdfFile.name}</span>}
+              {!budgetPdfFile && initialData?.budget_pdf_url && (
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ fontSize: "11px", color: "#10b981" }}>✓ Presupuesto cargado</span>
+                  <button 
+                    type="button" 
+                    onClick={handleRemoveBudgetPdf}
                     style={{ background: "none", border: "none", color: "#ef4444", fontSize: "10px", cursor: "pointer", textDecoration: "underline" }}
                   >
                     Eliminar

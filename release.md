@@ -1,5 +1,33 @@
 # Notas de Lanzamiento
 
+## Version 2.7 (24 de abril de 2026)
+
+### Nuevas Funcionalidades
+
+- **Dos PDFs por contrato (Contrato + Presupuesto)**:
+  - Cada contrato permite adjuntar y gestionar 2 documentos independientes.
+  - En las tarjetas se muestran accesos rápidos: **C** (Contrato) y **P** (Presupuesto).
+
+### Detalles Tecnicos Clave
+
+- **Backend (`server/src/index.js`)**:
+  - Nueva columna `budget_pdf_url` en `contracts` (migración automática).
+  - Nuevos endpoints:
+    - `POST /api/contracts/:id/budget-pdf`
+    - `DELETE /api/contracts/:id/budget-pdf`
+  - Al eliminar un contrato se eliminan ambos PDFs si existen.
+
+- **Frontend (`src/components/contracts/ContractForm.jsx`, `src/components/contracts/ContractRow.jsx`)**:
+  - Modal de edición con 2 campos de subida (Contrato y Presupuesto).
+  - Visualización en tarjeta con enlaces independientes.
+
+- **Infraestructura (`docker-compose.yml`)**:
+  - Persistencia fuera del repo para evitar pérdidas en despliegues:
+    - `/var/lib/contel-buscador/data` → `/app/data`
+    - `/var/lib/contel-buscador/uploads` → `/app/uploads`
+
+---
+
 ## Version 2.6.1 (21 de abril de 2026)
 
 ### Mejoras de Interfaz (Frontend)

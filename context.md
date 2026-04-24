@@ -1,15 +1,17 @@
-PROMPT DE CONTEXTO: Contel-Buscador (v2.6.1)
+PROMPT DE CONTEXTO: Contel-Buscador (v2.7.0)
 
 1. Proyecto y Stack:
 * Proposito: Gestion de mantenimientos y helpdesk para Contel Ingenieros.
 * Frontend: React (Vite) + CSS nativo (temas claro/oscuro).
 * Backend: Node.js (Express) + better-sqlite3 (modo WAL) + Zod.
 * Infraestructura: Docker Compose con Nginx; proxy inverso Traefik v2 en despliegue.
-* Persistencia: Volumenes para `/server/data` (DB) y `/server/uploads` (PDFs).
+* Persistencia: Bind mounts fuera del repo:
+  * DB: `/app/data` (host recomendado: `/var/lib/contel-buscador/data`)
+  * PDFs: `/app/uploads` (host recomendado: `/var/lib/contel-buscador/uploads`)
 
 2. Estado actual de la logica y base de datos:
 * Esquema principal:
-  * `contracts`: sin UNIQUE en `obra`; incluye `empresa` (CI/CS), `nCliente`, `cliente`, `descripcion`, `pdf_url`.
+  * `contracts`: sin UNIQUE en `obra`; incluye `empresa` (CI/CS), `nCliente`, `cliente`, `descripcion`, `pdf_url` (contrato) y `budget_pdf_url` (presupuesto).
   * `categories`: tabla maestra de categorias de servicio.
   * `contract_services`: relacion N:M contrato-categoria con `services_json`, `service_clauses_json`, `periodicity`, `last_execution`, `next_execution`.
 * Esquema de autenticacion:
@@ -33,6 +35,9 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.6.1)
 * Busqueda en tiempo real por obra, cliente, numero de cliente y descripcion.
 * Busqueda adicional por categoria de servicio (`category` en `/api/contracts`).
 * Gestion de contratos: alta, edicion, borrado y adjuntos PDF por contrato.
+* Adjuntos PDF dobles por contrato:
+  * Contrato: `/api/contracts/:id/pdf`
+  * Presupuesto: `/api/contracts/:id/budget-pdf`
 * Edicion rapida en lista para descripcion/servicios.
 * Clausulas opcionales por servicio y contrato:
   * Se pueden definir excepciones/condiciones concretas por modalidad de servicio (ej. `COR. PRES.`).

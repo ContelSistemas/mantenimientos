@@ -24,7 +24,7 @@ Documentación del proyecto:
 - **Cláusulas por Servicio (por cliente y categoría)**: Cada modalidad de servicio (ej. `COR. PRES.`) puede incluir una cláusula opcional específica del contrato.
 - **Tooltip de Condiciones Especiales**: Al pasar el ratón por un servicio en modo consulta se muestra la descripción y, si existe, su cláusula concreta.
 - **Gestión Completa de Contratos**: Alta, edición (vía modal) y borrado de contratos con confirmación de seguridad.
-- **Contratos en PDF**: Posibilidad de adjuntar, ver y eliminar el contrato original en PDF para cada obra. Los archivos se borran automáticamente al eliminar el contrato.
+- **Documentos en PDF (Contrato + Presupuesto)**: Posibilidad de adjuntar, ver y eliminar ambos PDFs por contrato. Los archivos se borran automáticamente al eliminar el contrato.
 - **Edición Rápida**: Modificación "in-place" de descripciones y estados de servicios (checkboxes) directamente desde la lista.
 - **Interfaz Responsiva**: Diseño moderno con temática oscura/clara, iconos por categoría y feedback visual de copiado.
 - **Protección de Edición**: Sistema de contraseña para evitar modificaciones accidentales por operadores no autorizados.
@@ -62,6 +62,14 @@ Para levantar el proyecto completo o aplicar actualizaciones, ejecuta:
 docker compose up -d --build
 ```
 
+Notas importantes de persistencia (producción):
+
+- Los datos (SQLite) y PDFs **no** deben vivir dentro del directorio del repo si despliegas con `git pull`.
+- El `docker-compose.yml` monta:
+  - `/var/lib/contel-buscador/data` → `/app/data` (DB)
+  - `/var/lib/contel-buscador/uploads` → `/app/uploads` (PDFs)
+- Evita `docker compose down -v` en producción: `-v` puede borrar volúmenes/datos.
+
 Notas sobre entornos:
 
 - En despliegue con Traefik: el router usa el dominio `mantenimientos.domdoklab.me` (ver `docker-compose.yml`).
@@ -88,15 +96,10 @@ Se recomienda cambiar estas credenciales mediante variables de entorno:
 - `VIEWER_PASSWORD`
 - `SESSION_MAX_AGE_SECONDS`
 
-## 🗂️ Estructura mínima versionada (sin datos)
+## 🗂️ Datos y PDFs (persistencia)
 
-Para permitir despliegues desde cero sin subir datos reales al repositorio, se versionan solo las carpetas runtime con archivos `.gitkeep`:
-
-- `server/data/.gitkeep`
-- `server/uploads/.gitkeep`
-
-La base de datos SQLite y los PDFs reales permanecen ignorados en `.gitignore`.  
-Al iniciar la API, la aplicación crea automáticamente la estructura de DB y aplica migraciones si el archivo no existe.
+- En producción, la persistencia se realiza fuera del repo en `/var/lib/contel-buscador` (ver sección anterior).
+- La base de datos SQLite y los PDFs no se suben al repositorio; si tienes que redeplegar, conserva esas rutas.
 
 ## 📁 Estructura del Proyecto
 

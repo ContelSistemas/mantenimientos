@@ -21,6 +21,21 @@ const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
+if (process.env.DEBUG_PATHS === '1') {
+  console.log('DB_PATH:', DB_PATH);
+  console.log('UPLOADS_DIR:', UPLOADS_DIR);
+  try {
+    fs.accessSync(path.dirname(DB_PATH), fs.constants.W_OK);
+  } catch {
+    console.warn('WARN: DB directory is not writable:', path.dirname(DB_PATH));
+  }
+  try {
+    fs.accessSync(UPLOADS_DIR, fs.constants.W_OK);
+  } catch {
+    console.warn('WARN: Uploads directory is not writable:', UPLOADS_DIR);
+  }
+}
+
 const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 
@@ -101,7 +116,8 @@ CREATE TABLE IF NOT EXISTS contracts (
   nCliente TEXT NOT NULL,
   cliente TEXT NOT NULL,
   descripcion TEXT,
-  pdf_url TEXT
+  pdf_url TEXT,
+  budget_pdf_url TEXT
 );
 CREATE TABLE IF NOT EXISTS categories (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -274,6 +290,18 @@ try {
   console.error("Migration error for pdf_url:", e.message);
 }
 
+// Migration: Add budget_pdf_url column if not exists
+try {
+  const tableInfo = db.prepare("PRAGMA table_info(contracts)").all();
+  const hasBudgetPdfUrl = tableInfo.some(c => c.name === 'budget_pdf_url');
+  if (!hasBudgetPdfUrl) {
+    console.log("Migrating contracts table to add budget_pdf_url...");
+    db.exec("ALTER TABLE contracts ADD COLUMN budget_pdf_url TEXT");
+  }
+} catch (e) {
+  console.error("Migration error for budget_pdf_url:", e.message);
+}
+
 // Migration: Add maintenance columns to contract_services if not exists
 try {
   const tableInfo = db.prepare("PRAGMA table_info(contract_services)").all();
@@ -304,18 +332,14 @@ try {
 app.use('/uploads', requireAuth, express.static(UPLOADS_DIR));
 
 // Configure multer for PDF uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, UPLOADS_DIR);
-  },
-  filename: (req, file, cb) => {
-    const contractId = req.params.id;
-    const ext = path.extname(file.originalname);
-    cb(null, `contract_${contractId}_${Date.now()}${ext}`);
-  }
-});
-const upload = multer({ 
-  storage,
+const makePdfUpload = (prefix) => multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
+    filename: (req, _file, cb) => {
+      const contractId = req.params.id;
+      cb(null, `${prefix}_${contractId}_${Date.now()}.pdf`);
+    }
+  }),
   fileFilter: (req, file, cb) => {
     if (file.mimetype === 'application/pdf') {
       cb(null, true);
@@ -325,6 +349,8 @@ const upload = multer({
   },
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
+const uploadContractPdf = makePdfUpload('contract');
+const uploadBudgetPdf = makePdfUpload('budget');
 
 // Migration: Remove UNIQUE from obra and add empresa column if not exists
 try {
@@ -346,6 +372,11 @@ try {
     
     try {
       db.transaction(() => {
+        const oldTableInfo = db.prepare("PRAGMA table_info(contracts)").all();
+        const oldHasEmpresa = oldTableInfo.some(c => c.name === 'empresa');
+        const oldHasPdfUrl = oldTableInfo.some(c => c.name === 'pdf_url');
+        const oldHasBudgetPdfUrl = oldTableInfo.some(c => c.name === 'budget_pdf_url');
+
         // Create new table
         db.exec(`
           CREATE TABLE contracts_new (
@@ -355,14 +386,18 @@ try {
             nCliente TEXT NOT NULL,
             cliente TEXT NOT NULL,
             descripcion TEXT,
-            pdf_url TEXT
+            pdf_url TEXT,
+            budget_pdf_url TEXT
           )
         `);
 
-        // Copy data
+        // Copy data (compatible con DBs antiguas)
+        const empresaExpr = oldHasEmpresa ? 'empresa' : "'CI'";
+        const pdfUrlExpr = oldHasPdfUrl ? 'pdf_url' : 'NULL';
+        const budgetPdfUrlExpr = oldHasBudgetPdfUrl ? 'budget_pdf_url' : 'NULL';
         db.exec(`
-          INSERT INTO contracts_new (id, obra, nCliente, cliente, descripcion, pdf_url)
-          SELECT id, obra, nCliente, cliente, descripcion, pdf_url FROM contracts
+          INSERT INTO contracts_new (id, obra, empresa, nCliente, cliente, descripcion, pdf_url, budget_pdf_url)
+          SELECT id, obra, ${empresaExpr}, nCliente, cliente, descripcion, ${pdfUrlExpr}, ${budgetPdfUrlExpr} FROM contracts
         `);
 
         // Swap tables
@@ -542,6 +577,7 @@ const getContractShape = (id) => {
     cliente: c.cliente,
     descripcion: c.descripcion,
     pdf_url: c.pdf_url,
+    budget_pdf_url: c.budget_pdf_url,
     servicios,
   };
 };
@@ -617,6 +653,7 @@ const ContractSchema = z.object({
   cliente: z.string().min(1),
   descripcion: z.string().optional().nullable(),
   pdf_url: z.string().optional().nullable(),
+  budget_pdf_url: z.string().optional().nullable(),
   servicios: z.record(z.string(), ServiceSchema).optional().default({})
 });
 
@@ -718,8 +755,16 @@ app.get('/api/contracts', (req, res) => {
 // Create
 app.post('/api/contracts', (req, res) => {
   const body = ContractSchema.parse(req.body);
-  const insertC = db.prepare('INSERT INTO contracts (obra, empresa, nCliente, cliente, descripcion, pdf_url) VALUES (?, ?, ?, ?, ?, ?)');
-  const result = insertC.run(body.obra, body.empresa, body.nCliente, body.cliente, body.descripcion ?? null, body.pdf_url ?? null);
+  const insertC = db.prepare('INSERT INTO contracts (obra, empresa, nCliente, cliente, descripcion, pdf_url, budget_pdf_url) VALUES (?, ?, ?, ?, ?, ?, ?)');
+  const result = insertC.run(
+    body.obra,
+    body.empresa,
+    body.nCliente,
+    body.cliente,
+    body.descripcion ?? null,
+    body.pdf_url ?? null,
+    body.budget_pdf_url ?? null
+  );
   const contractId = result.lastInsertRowid;
   
   const getOrCreateCat = db.prepare('INSERT INTO categories (name) VALUES (?) ON CONFLICT(name) DO NOTHING');
@@ -767,9 +812,19 @@ app.put('/api/contracts/:id', (req, res) => {
           nCliente = COALESCE(?, nCliente), 
           cliente = COALESCE(?, cliente), 
           descripcion = COALESCE(?, descripcion),
-          pdf_url = COALESCE(?, pdf_url)
+          pdf_url = COALESCE(?, pdf_url),
+          budget_pdf_url = COALESCE(?, budget_pdf_url)
       WHERE id = ?
-    `).run(data.obra ?? null, data.empresa ?? null, data.nCliente ?? null, data.cliente ?? null, data.descripcion ?? null, data.pdf_url ?? null, id);
+    `).run(
+      data.obra ?? null,
+      data.empresa ?? null,
+      data.nCliente ?? null,
+      data.cliente ?? null,
+      data.descripcion ?? null,
+      data.pdf_url ?? null,
+      data.budget_pdf_url ?? null,
+      id
+    );
 
     if (data.servicios) {
       const currentSvcs = db.prepare(`
@@ -819,7 +874,7 @@ app.put('/api/contracts/:id', (req, res) => {
 });
 
 // PDF Upload
-app.post('/api/contracts/:id/pdf', upload.single('pdf'), (req, res) => {
+app.post('/api/contracts/:id/pdf', uploadContractPdf.single('pdf'), (req, res) => {
   const id = Number(req.params.id);
   const contract = db.prepare('SELECT * FROM contracts WHERE id = ?').get(id);
   if (!contract) return res.status(404).json({ error: 'Contract not found' });
@@ -851,6 +906,38 @@ app.delete('/api/contracts/:id/pdf', (req, res) => {
   res.status(204).end();
 });
 
+// Budget PDF Upload
+app.post('/api/contracts/:id/budget-pdf', uploadBudgetPdf.single('pdf'), (req, res) => {
+  const id = Number(req.params.id);
+  const contract = db.prepare('SELECT * FROM contracts WHERE id = ?').get(id);
+  if (!contract) return res.status(404).json({ error: 'Contract not found' });
+
+  if (contract.budget_pdf_url) {
+    const oldPath = path.join(UPLOADS_DIR, path.basename(contract.budget_pdf_url));
+    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+  }
+
+  const pdfUrl = `/uploads/${req.file.filename}`;
+  db.prepare('UPDATE contracts SET budget_pdf_url = ? WHERE id = ?').run(pdfUrl, id);
+
+  res.json({ budget_pdf_url: pdfUrl });
+});
+
+// Budget PDF Delete
+app.delete('/api/contracts/:id/budget-pdf', (req, res) => {
+  const id = Number(req.params.id);
+  const contract = db.prepare('SELECT * FROM contracts WHERE id = ?').get(id);
+  if (!contract) return res.status(404).json({ error: 'Contract not found' });
+
+  if (contract.budget_pdf_url) {
+    const oldPath = path.join(UPLOADS_DIR, path.basename(contract.budget_pdf_url));
+    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+  }
+
+  db.prepare('UPDATE contracts SET budget_pdf_url = NULL WHERE id = ?').run(id);
+  res.status(204).end();
+});
+
 // Delete
 app.delete('/api/contracts/:id', (req, res) => {
   const id = Number(req.params.id);
@@ -859,6 +946,10 @@ app.delete('/api/contracts/:id', (req, res) => {
   // Delete PDF if exists
   if (contract?.pdf_url) {
     const oldPath = path.join(UPLOADS_DIR, path.basename(contract.pdf_url));
+    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+  }
+  if (contract?.budget_pdf_url) {
+    const oldPath = path.join(UPLOADS_DIR, path.basename(contract.budget_pdf_url));
     if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
   }
 

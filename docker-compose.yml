@@ -33,13 +33,17 @@ services:
     container_name: contel-api
     restart: unless-stopped
     volumes:
-      - ./server/data:/app/server/data
-      - ./server/uploads:/app/server/uploads
+      # Persistencia fuera del repo (evita perder datos/PDFs al redeplegar)
+      # OJO: el backend corre desde `/app/src/index.js`, así que sus rutas reales son:
+      # - DB:      `/app/data/contel.db`
+      # - Uploads: `/app/uploads`
+      - /var/lib/contel-buscador/data:/app/data
+      - /var/lib/contel-buscador/uploads:/app/uploads
     networks:
       - internal
     environment:
       - PORT=3000
-      - DB_PATH=/app/server/data/contel.db
+      - DB_PATH=/app/data/contel.db
 
 networks:
   # Red externa para conexión con el proxy Traefik

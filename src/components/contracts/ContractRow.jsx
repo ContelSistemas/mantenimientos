@@ -192,7 +192,7 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
                 target="_blank" 
                 rel="noopener noreferrer"
                 onClick={e => e.stopPropagation()}
-                title="Ver Contrato PDF"
+                title="Ver Contrato (PDF)"
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "11px", padding: "2px 6px", borderRadius: "3px",
@@ -200,7 +200,24 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
                   color: "#ef4444", textDecoration: "none"
                 }}
               >
-                PDF
+                C
+              </a>
+            )}
+            {row.budget_pdf_url && (
+              <a 
+                href={row.budget_pdf_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                title="Ver Presupuesto (PDF)"
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "11px", padding: "2px 6px", borderRadius: "3px",
+                  background: "#10b98122", border: "1px solid #10b98144",
+                  color: "#10b981", textDecoration: "none"
+                }}
+              >
+                P
               </a>
             )}
             {cats.map(cat => (
