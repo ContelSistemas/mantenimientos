@@ -35,6 +35,9 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
     servicios: normalizeServices(row.servicios || {})
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
+  const [notesDraft, setNotesDraft] = useState(row.notes || "");
+  const [isNotesSaving, setIsNotesSaving] = useState(false);
 
   const cats = Object.keys(row.servicios || {});
   const startDateLabel = formatContractDate(row.start_date);
@@ -76,6 +79,38 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
       alert("Error al guardar los cambios");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const openNotes = (e) => {
+    e.stopPropagation();
+    setNotesDraft(row.notes || "");
+    setIsNotesOpen(true);
+  };
+
+  const closeNotes = (e) => {
+    e?.stopPropagation?.();
+    setIsNotesOpen(false);
+  };
+
+  const saveNotes = async (e) => {
+    e.stopPropagation();
+    if (userRole !== "ADMIN") return;
+    setIsNotesSaving(true);
+    try {
+      const res = await fetch(`/api/contracts/${row.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: notesDraft })
+      });
+      if (!res.ok) throw new Error("Error al guardar notas");
+      onUpdate();
+      setIsNotesOpen(false);
+    } catch (err) {
+      console.error("Error saving notes", err);
+      alert("Error al guardar las notas");
+    } finally {
+      setIsNotesSaving(false);
     }
   };
 
@@ -125,17 +160,18 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
   };
 
   return (
-    <div
-      onClick={() => !isEditing && onToggle()}
-      style={{
-        background: isOpen ? "var(--card-bg-expanded)" : "var(--card-bg)",
-        border: `1px solid ${isOpen ? "var(--highlight-color)" : "var(--card-border)"}`,
-        borderRadius: "10px", cursor: isEditing ? "default" : "pointer",
-        transition: "all 0.15s", overflow: "hidden",
-      }}
-      onMouseEnter={e => { if (!isOpen && !isEditing) { e.currentTarget.style.background = "var(--card-bg-hover)"; e.currentTarget.style.borderColor = "var(--highlight-color)"; } }}
-      onMouseLeave={e => { if (!isOpen && !isEditing) { e.currentTarget.style.background = "var(--card-bg)"; e.currentTarget.style.borderColor = "var(--card-border)"; } }}
-    >
+    <>
+      <div
+        onClick={() => !isEditing && onToggle()}
+        style={{
+          background: isOpen ? "var(--card-bg-expanded)" : "var(--card-bg)",
+          border: `1px solid ${isOpen ? "var(--highlight-color)" : "var(--card-border)"}`,
+          borderRadius: "10px", cursor: isEditing ? "default" : "pointer",
+          transition: "all 0.15s", overflow: "hidden",
+        }}
+        onMouseEnter={e => { if (!isOpen && !isEditing) { e.currentTarget.style.background = "var(--card-bg-hover)"; e.currentTarget.style.borderColor = "var(--highlight-color)"; } }}
+        onMouseLeave={e => { if (!isOpen && !isEditing) { e.currentTarget.style.background = "var(--card-bg)"; e.currentTarget.style.borderColor = "var(--card-border)"; } }}
+      >
       {/* Main row */}
       <div style={{ padding: "11px 14px", display: "grid", gridTemplateColumns: "106px 40px 60px 1fr auto", gap: "10px", alignItems: "center" }}>
         {/* Obra */}
@@ -249,6 +285,22 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
           </div>
           
           <div style={{ display: "flex", gap: "4px" }}>
+            <button
+              onClick={openNotes}
+              title={row.notes ? "Ver/editar notas" : "Añadir notas"}
+              style={{
+                background: "var(--input-bg)",
+                border: "1px solid var(--input-border)",
+                borderRadius: "6px",
+                color: row.notes ? "var(--highlight-color)" : "var(--stats-color)",
+                padding: "4px 8px",
+                fontSize: "10px",
+                cursor: "pointer",
+                position: "relative"
+              }}
+            >
+              📝
+            </button>
             {userRole === "ADMIN" && !isEditing ? (
               <>
                 <button
@@ -320,6 +372,116 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
           ))}
         </div>
       )}
-    </div>
+      </div>
+
+      {isNotesOpen && (
+        <div
+          onClick={closeNotes}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "var(--overlay-bg)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 120,
+            padding: "20px"
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "var(--bg-color)",
+              border: "1px solid var(--card-border)",
+              borderRadius: "12px",
+              width: "100%",
+              maxWidth: "520px",
+              padding: "18px"
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-color)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  Notas — {row.cliente}
+                </div>
+                <div style={{ fontSize: "11px", color: "var(--stats-color)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {row.obra} · {row.nCliente}
+                </div>
+              </div>
+              <button
+                onClick={closeNotes}
+                title="Cerrar"
+                style={{
+                  background: "var(--input-bg)",
+                  border: "1px solid var(--input-border)",
+                  borderRadius: "8px",
+                  color: "var(--text-color)",
+                  padding: "6px 10px",
+                  cursor: "pointer"
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <textarea
+              value={notesDraft}
+              onChange={(e) => setNotesDraft(e.target.value)}
+              readOnly={userRole !== "ADMIN"}
+              placeholder={userRole === "ADMIN" ? "Escribe aquí notas relevantes del contrato..." : "Sin notas"}
+              style={{
+                width: "100%",
+                marginTop: "12px",
+                minHeight: "160px",
+                background: "var(--input-bg)",
+                border: "1px solid var(--input-border)",
+                borderRadius: "8px",
+                color: "var(--text-color)",
+                fontSize: "12px",
+                padding: "10px",
+                fontFamily: "inherit",
+                resize: "vertical"
+              }}
+            />
+
+            <div style={{ marginTop: "12px", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+              <button
+                onClick={closeNotes}
+                style={{
+                  background: "var(--input-bg)",
+                  border: "1px solid var(--input-border)",
+                  borderRadius: "8px",
+                  color: "var(--text-color)",
+                  padding: "8px 12px",
+                  cursor: "pointer"
+                }}
+              >
+                Cerrar
+              </button>
+              {userRole === "ADMIN" && (
+                <button
+                  onClick={saveNotes}
+                  disabled={isNotesSaving}
+                  style={{
+                    background: "var(--highlight-color)",
+                    border: "none",
+                    borderRadius: "8px",
+                    color: "white",
+                    padding: "8px 12px",
+                    cursor: "pointer",
+                    opacity: isNotesSaving ? 0.7 : 1
+                  }}
+                >
+                  {isNotesSaving ? "Guardando..." : "Guardar"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

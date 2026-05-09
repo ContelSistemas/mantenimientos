@@ -116,6 +116,7 @@ CREATE TABLE IF NOT EXISTS contracts (
   nCliente TEXT NOT NULL,
   cliente TEXT NOT NULL,
   descripcion TEXT,
+  notes TEXT,
   start_date TEXT,
   end_date TEXT,
   pdf_url TEXT,
@@ -319,6 +320,18 @@ try {
   }
 } catch (e) {
   console.error("Migration error for contract dates:", e.message);
+}
+
+// Migration: Add notes column if not exists
+try {
+  const tableInfo = db.prepare("PRAGMA table_info(contracts)").all();
+  const hasNotes = tableInfo.some(c => c.name === 'notes');
+  if (!hasNotes) {
+    console.log("Migrating contracts table to add notes...");
+    db.exec("ALTER TABLE contracts ADD COLUMN notes TEXT");
+  }
+} catch (e) {
+  console.error("Migration error for notes:", e.message);
 }
 
 // Migration: Add maintenance columns to contract_services if not exists
@@ -601,6 +614,7 @@ const getContractShape = (id) => {
     nCliente: c.nCliente,
     cliente: c.cliente,
     descripcion: c.descripcion,
+    notes: c.notes,
     start_date: c.start_date,
     end_date: c.end_date,
     pdf_url: c.pdf_url,
@@ -679,6 +693,7 @@ const ContractSchema = z.object({
   nCliente: z.string().min(1),
   cliente: z.string().min(1),
   descripcion: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
   start_date: z.string().optional().nullable(),
   end_date: z.string().optional().nullable(),
   pdf_url: z.string().optional().nullable(),
@@ -782,15 +797,16 @@ app.get('/api/contracts', (req, res) => {
 });
 
 // Create
-app.post('/api/contracts', (req, res) => {
+app.post('/api/contracts', requireAdmin, (req, res) => {
   const body = ContractSchema.parse(req.body);
-  const insertC = db.prepare('INSERT INTO contracts (obra, empresa, nCliente, cliente, descripcion, start_date, end_date, pdf_url, budget_pdf_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  const insertC = db.prepare('INSERT INTO contracts (obra, empresa, nCliente, cliente, descripcion, notes, start_date, end_date, pdf_url, budget_pdf_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
   const result = insertC.run(
     body.obra,
     body.empresa,
     body.nCliente,
     body.cliente,
     body.descripcion ?? null,
+    body.notes ?? null,
     body.start_date ?? null,
     body.end_date ?? null,
     body.pdf_url ?? null,
@@ -829,7 +845,7 @@ app.post('/api/contracts', (req, res) => {
 });
 
 // Update
-app.put('/api/contracts/:id', (req, res) => {
+app.put('/api/contracts/:id', requireAdmin, (req, res) => {
   const id = Number(req.params.id);
   const body = ContractSchema.partial().parse(req.body);
   const existing = db.prepare('SELECT * FROM contracts WHERE id = ?').get(id);
@@ -843,6 +859,7 @@ app.put('/api/contracts/:id', (req, res) => {
           nCliente = COALESCE(?, nCliente), 
           cliente = COALESCE(?, cliente), 
           descripcion = COALESCE(?, descripcion),
+          notes = COALESCE(?, notes),
           start_date = COALESCE(?, start_date),
           end_date = COALESCE(?, end_date),
           pdf_url = COALESCE(?, pdf_url),
@@ -854,6 +871,7 @@ app.put('/api/contracts/:id', (req, res) => {
       data.nCliente ?? null,
       data.cliente ?? null,
       data.descripcion ?? null,
+      data.notes ?? null,
       data.start_date ?? null,
       data.end_date ?? null,
       data.pdf_url ?? null,
@@ -909,7 +927,7 @@ app.put('/api/contracts/:id', (req, res) => {
 });
 
 // PDF Upload
-app.post('/api/contracts/:id/pdf', uploadContractPdf.single('pdf'), (req, res) => {
+app.post('/api/contracts/:id/pdf', requireAdmin, uploadContractPdf.single('pdf'), (req, res) => {
   const id = Number(req.params.id);
   const contract = db.prepare('SELECT * FROM contracts WHERE id = ?').get(id);
   if (!contract) return res.status(404).json({ error: 'Contract not found' });
@@ -927,7 +945,7 @@ app.post('/api/contracts/:id/pdf', uploadContractPdf.single('pdf'), (req, res) =
 });
 
 // PDF Delete
-app.delete('/api/contracts/:id/pdf', (req, res) => {
+app.delete('/api/contracts/:id/pdf', requireAdmin, (req, res) => {
   const id = Number(req.params.id);
   const contract = db.prepare('SELECT * FROM contracts WHERE id = ?').get(id);
   if (!contract) return res.status(404).json({ error: 'Contract not found' });
@@ -942,7 +960,7 @@ app.delete('/api/contracts/:id/pdf', (req, res) => {
 });
 
 // Budget PDF Upload
-app.post('/api/contracts/:id/budget-pdf', uploadBudgetPdf.single('pdf'), (req, res) => {
+app.post('/api/contracts/:id/budget-pdf', requireAdmin, uploadBudgetPdf.single('pdf'), (req, res) => {
   const id = Number(req.params.id);
   const contract = db.prepare('SELECT * FROM contracts WHERE id = ?').get(id);
   if (!contract) return res.status(404).json({ error: 'Contract not found' });
@@ -959,7 +977,7 @@ app.post('/api/contracts/:id/budget-pdf', uploadBudgetPdf.single('pdf'), (req, r
 });
 
 // Budget PDF Delete
-app.delete('/api/contracts/:id/budget-pdf', (req, res) => {
+app.delete('/api/contracts/:id/budget-pdf', requireAdmin, (req, res) => {
   const id = Number(req.params.id);
   const contract = db.prepare('SELECT * FROM contracts WHERE id = ?').get(id);
   if (!contract) return res.status(404).json({ error: 'Contract not found' });
@@ -974,7 +992,7 @@ app.delete('/api/contracts/:id/budget-pdf', (req, res) => {
 });
 
 // Delete
-app.delete('/api/contracts/:id', (req, res) => {
+app.delete('/api/contracts/:id', requireAdmin, (req, res) => {
   const id = Number(req.params.id);
   const contract = db.prepare('SELECT * FROM contracts WHERE id = ?').get(id);
   

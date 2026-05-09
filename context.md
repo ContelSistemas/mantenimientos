@@ -1,4 +1,4 @@
-PROMPT DE CONTEXTO: Contel-Buscador (v2.8.0)
+PROMPT DE CONTEXTO: Contel-Buscador (v2.8.1)
 
 1. Proyecto y Stack:
 * Proposito: Gestion de mantenimientos y helpdesk para Contel Ingenieros.
@@ -11,7 +11,7 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.8.0)
 
 2. Estado actual de la logica y base de datos:
 * Esquema principal:
-  * `contracts`: sin UNIQUE en `obra`; incluye `empresa` (CI/CS), `nCliente`, `cliente`, `descripcion`, `start_date`, `end_date`, `pdf_url` (contrato) y `budget_pdf_url` (presupuesto).
+  * `contracts`: sin UNIQUE en `obra`; incluye `empresa` (CI/CS), `nCliente`, `cliente`, `descripcion`, `notes`, `start_date`, `end_date`, `pdf_url` (contrato) y `budget_pdf_url` (presupuesto).
   * `categories`: tabla maestra de categorias de servicio.
   * `contract_services`: relacion N:M contrato-categoria con `services_json`, `service_clauses_json`, `periodicity`, `last_execution`, `next_execution`.
 * Esquema de autenticacion:
@@ -50,7 +50,15 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.8.0)
   * Reparto normal (editable por drag & drop entre tecnicos).
   * Simulacion por ausencia (redistribucion automatica segun carga actual).
 
-5. Estado reciente (v2.8):
+5. Estado reciente (v2.8.1):
+* Notas por contrato persistidas:
+  * Nuevo campo `notes` en `contracts` (migracion automatica).
+  * API de contratos actualizada para leer/escribir notas en `POST /api/contracts` y `PUT /api/contracts/:id`.
+  * Frontend actualizado: boton 📝 por contrato con modal (edicion solo para rol `ADMIN`).
+* Endurecimiento de permisos en contratos:
+  * Operaciones mutables de contratos (POST/PUT/DELETE y gestion de PDFs) restringidas a rol `ADMIN`.
+
+5.1 Estado reciente (v2.8.0):
 * Fechas de inicio/fin integradas en contratos:
   * Nuevos campos persistentes `start_date` y `end_date` en `contracts` (migracion automatica).
   * API de contratos actualizada para leer/escribir fechas en `POST /api/contracts` y `PUT /api/contracts/:id`.

@@ -2,6 +2,8 @@
 
 Aplicación web avanzada para la gestión y visualización de contratos de mantenimiento, servicios de monitorización y helpdesk. Desarrollada con **React**, **Node.js (Express)** y **SQLite**, orquestada mediante **Docker**.
 
+Versión documentada actual: **v2.8.1** (ver `release.md`).
+
 Documentación del proyecto:
 
 - `context.md` (contexto técnico y funcional)
@@ -24,6 +26,7 @@ Documentación del proyecto:
 - **Cláusulas por Servicio (por cliente y categoría)**: Cada modalidad de servicio (ej. `COR. PRES.`) puede incluir una cláusula opcional específica del contrato.
 - **Tooltip de Condiciones Especiales**: Al pasar el ratón por un servicio en modo consulta se muestra la descripción y, si existe, su cláusula concreta.
 - **Gestión Completa de Contratos**: Alta, edición (vía modal) y borrado de contratos con confirmación de seguridad.
+- **Notas por Contrato**: Botón 📝 en cada contrato para registrar notas relevantes persistidas en SQLite.
 - **Fechas de Vigencia del Contrato**: Cada ficha permite registrar y visualizar **fecha de inicio** y **fecha de finalización** del contrato.
 - **Documentos en PDF (Contrato + Presupuesto)**: Posibilidad de adjuntar, ver y eliminar ambos PDFs por contrato. Los archivos se borran automáticamente al eliminar el contrato.
 - **Edición Rápida**: Modificación "in-place" de descripciones y estados de servicios (checkboxes) directamente desde la lista.
@@ -32,6 +35,8 @@ Documentación del proyecto:
 
 ## 🛠️ Correcciones y Mejoras Recientes
 
+- **Notas por Contrato (📝)**: Nuevo modal por contrato para registrar notas relevantes persistidas en SQLite.
+- **Permisos en Contratos (ADMIN/VIEWER)**: Operaciones mutables (alta/edición/borrado y PDFs) restringidas a rol `ADMIN`; `VIEWER` queda en solo lectura.
 - **Pantalla de Login Animada (Tech/Telecom)**: Nueva interfaz de acceso con fondo animado de red/señal y formulario de autenticación.
 - **Autenticación End-to-End**: Nuevos endpoints `/api/auth/login`, `/api/auth/me` y `/api/auth/logout`, con protección de `/api/contracts*` y `/uploads`.
 - **Optimización de Búsqueda (Frontend)**: Implementación de debounce en los campos de búsqueda para reducir las llamadas a la API, mejorando la experiencia de usuario y el rendimiento.

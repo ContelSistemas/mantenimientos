@@ -1,5 +1,26 @@
 # Notas de Lanzamiento
-## Version 2.8 (24 de abril de 2026)
+## Versión 2.8.1 (9 de mayo de 2026)
+
+### Nuevas Funcionalidades
+
+- **Notas por contrato**:
+  - Se añade un botón 📝 en cada contrato para abrir una ventana y registrar notas relevantes.
+  - Las notas se almacenan en SQLite y se muestran al reabrir el contrato.
+
+### Detalles Tecnicos Clave
+
+- **Backend (`server/src/index.js`)**:
+  - Nueva columna en `contracts`: `notes` (con migración automática para bases existentes).
+  - `ContractSchema` actualizado para validar y aceptar `notes`.
+  - Endpoints mutables de contratos endurecidos a rol `ADMIN` (alta/edición/borrado y gestión de PDFs).
+
+- **Frontend (`src/components/contracts/ContractRow.jsx`)**:
+  - Botón 📝 por contrato con modal de edición/consulta.
+  - `ADMIN` puede editar y guardar; `VIEWER` queda en modo solo lectura.
+
+---
+
+## Versión 2.8.0 (24 de abril de 2026)
 
 ### Nuevas Funcionalidades
 
@@ -20,7 +41,7 @@
 
 ---
 
-## Version 2.7 (24 de abril de 2026)
+## Versión 2.7.0 (24 de abril de 2026)
 
 ### Nuevas Funcionalidades
 
@@ -48,7 +69,7 @@
 
 ---
 
-## Version 2.6.1 (21 de abril de 2026)
+## Versión 2.6.1 (21 de abril de 2026)
 
 ### Mejoras de Interfaz (Frontend)
 
@@ -67,7 +88,7 @@
 
 ---
 
-## Version 2.6 (17 de abril de 2026)
+## Versión 2.6.0 (17 de abril de 2026)
 
 ### Nuevas Funcionalidades
 
@@ -98,7 +119,7 @@
 
 ---
 
-## Version 2.5 (12 de abril de 2026)
+## Versión 2.5.0 (12 de abril de 2026)
 
 ### Nuevas Funcionalidades
 
@@ -145,7 +166,7 @@
 
 ---
 
-## Version 2.4 (11 de abril de 2026)
+## Versión 2.4.0 (11 de abril de 2026)
 
 ### Nuevas Funcionalidades
 
