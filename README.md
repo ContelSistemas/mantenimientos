@@ -2,7 +2,7 @@
 
 Aplicación web avanzada para la gestión y visualización de contratos de mantenimiento, servicios de monitorización y helpdesk. Desarrollada con **React**, **Node.js (Express)** y **SQLite**, orquestada mediante **Docker**.
 
-Versión documentada actual: **v2.8.1** (ver `release.md`).
+Versión documentada actual: **v2.8.2** (ver `release.md`).
 
 Documentación del proyecto:
 
@@ -36,6 +36,7 @@ Documentación del proyecto:
 ## 🛠️ Correcciones y Mejoras Recientes
 
 - **Notas por Contrato (📝)**: Nuevo modal por contrato para registrar notas relevantes persistidas en SQLite.
+- **Tour guiado (React Joyride)**: Recorrido interactivo para usuarios nuevos, con pasos anclados a elementos reales de la UI (buscador, primer contrato, notas, cobertura, tema y logout).
 - **Permisos en Contratos (ADMIN/VIEWER)**: Operaciones mutables (alta/edición/borrado y PDFs) restringidas a rol `ADMIN`; `VIEWER` queda en solo lectura.
 - **Pantalla de Login Animada (Tech/Telecom)**: Nueva interfaz de acceso con fondo animado de red/señal y formulario de autenticación.
 - **Autenticación End-to-End**: Nuevos endpoints `/api/auth/login`, `/api/auth/me` y `/api/auth/logout`, con protección de `/api/contracts*` y `/uploads`.

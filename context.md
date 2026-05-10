@@ -1,4 +1,4 @@
-PROMPT DE CONTEXTO: Contel-Buscador (v2.8.1)
+PROMPT DE CONTEXTO: Contel-Buscador (v2.8.2)
 
 1. Proyecto y Stack:
 * Proposito: Gestion de mantenimientos y helpdesk para Contel Ingenieros.
@@ -49,8 +49,17 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.8.1)
 * Vista "Asignacion de Soporte" integrada en React con dos modos:
   * Reparto normal (editable por drag & drop entre tecnicos).
   * Simulacion por ausencia (redistribucion automatica segun carga actual).
+* Tour guiado (onboarding) con React Joyride:
+  * Boton "Tour" en header para iniciarlo manualmente.
+  * Auto-inicio la primera vez por navegador (persistido en localStorage).
+  * Pasos anclados a elementos concretos: buscador, primer contrato y boton de notas, cobertura, tema y logout.
 
-5. Estado reciente (v2.8.1):
+5. Estado reciente (v2.8.2):
+* Tour guiado integrado con React Joyride:
+  * Nuevo componente `AppTour` con pasos y estilos consistentes con el tema.
+  * Fix de anclaje: los pasos de "Abrir un contrato" y "Notas por contrato" apuntan al primer contrato visible dentro del contenedor de lista, evitando desajustes por targets multiples o DOM aun no renderizado.
+
+5.1 Estado reciente (v2.8.1):
 * Notas por contrato persistidas:
   * Nuevo campo `notes` en `contracts` (migracion automatica).
   * API de contratos actualizada para leer/escribir notas en `POST /api/contracts` y `PUT /api/contracts/:id`.
@@ -58,7 +67,7 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.8.1)
 * Endurecimiento de permisos en contratos:
   * Operaciones mutables de contratos (POST/PUT/DELETE y gestion de PDFs) restringidas a rol `ADMIN`.
 
-5.1 Estado reciente (v2.8.0):
+5.2 Estado reciente (v2.8.0):
 * Fechas de inicio/fin integradas en contratos:
   * Nuevos campos persistentes `start_date` y `end_date` en `contracts` (migracion automatica).
   * API de contratos actualizada para leer/escribir fechas en `POST /api/contracts` y `PUT /api/contracts/:id`.

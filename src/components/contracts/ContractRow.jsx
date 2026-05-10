@@ -3,7 +3,7 @@ import { CategoryRow } from './CategoryRow';
 import { CAT_CONFIG } from '../../constants/config';
 import { highlight } from '../../utils/helpers';
 
-export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, onEdit, copied, userRole, isTourAnchor }) {
+export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, onEdit, copied, userRole }) {
   const formatContractDate = (value) => {
     if (!value) return null;
     const parts = value.split('-');
@@ -162,7 +162,7 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
   return (
     <>
       <div
-        id={isTourAnchor ? "tour-contract-row" : undefined}
+        data-tour="contract-row"
         onClick={() => !isEditing && onToggle()}
         style={{
           background: isOpen ? "var(--card-bg-expanded)" : "var(--card-bg)",
@@ -289,7 +289,7 @@ export function ContractRow({ row, query, isOpen, onToggle, onUpdate, onCopy, on
             <button
               onClick={openNotes}
               title={row.notes ? "Ver/editar notas" : "Añadir notas"}
-              id={isTourAnchor ? "tour-contract-notes" : undefined}
+              data-tour="contract-notes"
               style={{
                 background: "var(--input-bg)",
                 border: "1px solid var(--input-border)",

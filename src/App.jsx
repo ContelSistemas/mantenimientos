@@ -246,7 +246,7 @@ export default function App() {
               <div style={{ fontSize: "14px" }}>{query || categoryFilter ? <>Sin resultados para <strong style={{ color: "var(--highlight-color)" }}>"{query} {categoryFilter}"</strong></> : "No hay datos disponibles"}</div>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+            <div id="tour-contract-list" style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
               {results.map((row) => (
                 <ContractRow
                   key={row.id}
@@ -259,7 +259,6 @@ export default function App() {
                   onEdit={() => setEditingContract(row)}
                   copied={copied}
                   userRole={userRole}
-                  isTourAnchor={row.id === results[0]?.id}
                 />
               ))}
             </div>

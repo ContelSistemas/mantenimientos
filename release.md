@@ -1,4 +1,22 @@
 # Notas de Lanzamiento
+## Versión 2.8.2 (10 de mayo de 2026)
+
+### Nuevas Funcionalidades
+
+- **Tour guiado (React Joyride)**:
+  - Se añade un recorrido de onboarding para mostrar las funcionalidades principales a usuarios nuevos.
+  - Botón **"Tour"** en el header para lanzarlo manualmente.
+  - Auto-inicio la primera vez por navegador (persistido en localStorage).
+
+### Detalles Tecnicos Clave
+
+- **Frontend (`src/components/tour/AppTour.jsx`, `src/components/layout/Header.jsx`)**:
+  - Integración de `react-joyride` con pasos controlados y estilos acordes al tema.
+  - Fix de anclaje: los pasos **"Abrir un contrato"** y **"Notas por contrato"** apuntan al **primer contrato visible dentro de la lista** (`#tour-contract-list > ...:first-child`) para evitar desajustes.
+  - Ajuste de scroll para header sticky (`scrollOffset`) y reintentos si el target aún no está renderizado.
+
+---
+
 ## Versión 2.8.1 (9 de mayo de 2026)
 
 ### Nuevas Funcionalidades

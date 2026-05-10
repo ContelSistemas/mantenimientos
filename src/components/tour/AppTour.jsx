@@ -28,14 +28,15 @@ function buildSteps({ userRole }) {
       meta: { section: "contracts" },
     },
     {
-      target: "#tour-contract-row",
+      target: "#tour-contract-list > [data-tour=\"contract-row\"]:first-child",
       title: "Abrir un contrato",
       content: "Pulsa una fila para desplegar los servicios contratados y ver más detalle.",
       placement: "bottom",
       meta: { section: "contracts" },
     },
     {
-      target: "#tour-contract-notes",
+      target:
+        "#tour-contract-list > [data-tour=\"contract-row\"]:first-child [data-tour=\"contract-notes\"]",
       title: "Notas por contrato",
       content: "Usa 📝 para ver (y si eres ADMIN, editar) notas internas del contrato.",
       placement: "left",
@@ -127,7 +128,7 @@ export function AppTour({
     (data) => {
       const { status, type, index } = data;
       const stepTarget = data?.step?.target;
-      const isContractTarget = stepTarget === "#tour-contract-row" || stepTarget === "#tour-contract-notes";
+      const isContractTarget = typeof stepTarget === "string" && stepTarget.startsWith("#tour-contract-list");
 
       if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
         localStorage.setItem(STORAGE_KEY, "1");
@@ -141,6 +142,13 @@ export function AppTour({
           setRun(false);
           onSectionChange?.(targetSection);
           window.setTimeout(() => setRun(true), 80);
+        }
+        if (isContractTarget && contractsReady) {
+          const found = document.querySelector(stepTarget);
+          if (!found) {
+            setRun(false);
+            window.setTimeout(() => setRun(true), 120);
+          }
         }
         return;
       }
@@ -169,6 +177,7 @@ export function AppTour({
       stepIndex={stepIndex}
       continuous
       scrollToFirstStep
+      scrollOffset={170}
       showSkipButton
       showProgress
       disableOverlayClose
