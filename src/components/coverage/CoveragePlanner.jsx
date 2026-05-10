@@ -295,8 +295,8 @@ export function CoveragePlanner({ userRole }) {
           </p>
         </div>
 
-        <div className="cov-selector-label">Tecnico ausente hoy</div>
-        <div className="cov-selector">
+      <div className="cov-selector-label">Tecnico ausente hoy</div>
+        <div className="cov-selector" id="tour-coverage-selector">
           <button
             className={`cov-btn-normal ${selected === "normal" ? "active" : ""}`}
             onClick={() => setSelected("normal")}

@@ -4,6 +4,7 @@ import { ContractRow } from "./components/contracts/ContractRow";
 import { ContractForm } from "./components/contracts/ContractForm";
 import { CoveragePlanner } from "./components/coverage/CoveragePlanner";
 import { LoginPage } from "./components/auth/LoginPage";
+import { AppTour } from "./components/tour/AppTour";
 
 // Simple debounce function
 const debounce = (func, delay) => {
@@ -34,6 +35,7 @@ export default function App() {
   const [authError, setAuthError] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
+  const [isTourOpen, setIsTourOpen] = useState(false);
 
   // Theme management
   const [theme, setTheme] = useState(() => {
@@ -118,6 +120,7 @@ export default function App() {
     setShowForm(false);
     setEditingContract(null);
     setExpanded(null);
+    setIsTourOpen(false);
   }, []);
 
   useEffect(() => {
@@ -169,6 +172,7 @@ export default function App() {
   }, [isAuthenticated, activeSection, query, categoryFilter, debouncedFetchContracts]);
 
   const results = useMemo(() => data, [data]);
+  const contractsReady = activeSection === "contracts" && !loading && results.length > 0;
 
   const toggleExpand = (id) => setExpanded(expanded === id ? null : id);
 
@@ -193,6 +197,15 @@ export default function App() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-color)", fontFamily: "'DM Mono', 'Courier New', monospace", color: "var(--text-color)" }}>
+      <AppTour
+        userRole={userRole}
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+        open={isTourOpen}
+        onClose={() => setIsTourOpen(false)}
+        autoStart
+        contractsReady={contractsReady}
+      />
       <Header
         query={query}
         setQuery={setQuery}
@@ -210,6 +223,7 @@ export default function App() {
         onNewContractClick={() => setShowForm(true)}
         activeSection={activeSection}
         onSectionChange={setActiveSection}
+        onStartTour={() => setIsTourOpen(true)}
       />
 
       <div style={{ padding: "12px 18px 40px" }}>
@@ -245,6 +259,7 @@ export default function App() {
                   onEdit={() => setEditingContract(row)}
                   copied={copied}
                   userRole={userRole}
+                  isTourAnchor={row.id === results[0]?.id}
                 />
               ))}
             </div>

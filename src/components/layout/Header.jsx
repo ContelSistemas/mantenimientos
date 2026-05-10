@@ -6,7 +6,8 @@ export function Header({
   query, setQuery, categoryFilter, setCategoryFilter, loading, error, resultsLength, dataLength, 
   onNewContractClick, theme, toggleTheme,
   userRole, onLogout, username,
-  activeSection, onSectionChange
+  activeSection, onSectionChange,
+  onStartTour
 }) {
   return (
     <div style={{
@@ -46,6 +47,7 @@ export function Header({
 
           <button
             onClick={toggleTheme}
+            id="tour-theme-toggle"
             style={{
               background: "var(--card-bg)",
               color: "var(--text-color)",
@@ -59,10 +61,30 @@ export function Header({
           >
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
+
+          <button
+            onClick={onStartTour}
+            id="tour-start"
+            type="button"
+            style={{
+              background: "transparent",
+              color: "var(--stats-color)",
+              border: "1px solid var(--card-border)",
+              borderRadius: "8px",
+              padding: "8px 10px",
+              fontSize: "11px",
+              fontWeight: 600,
+              cursor: "pointer"
+            }}
+            title="Abrir tour guiado"
+          >
+            Tour
+          </button>
           
           {userRole === "ADMIN" && (
             <button
               onClick={onNewContractClick}
+              id="tour-new-contract"
               style={{
                 background: "linear-gradient(135deg, #4f46e5, #7c3aed)",
                 color: "white", border: "none", borderRadius: "8px",
@@ -80,6 +102,7 @@ export function Header({
           <button
             onClick={onLogout}
             type="button"
+            id="tour-logout"
             style={{
               background: "transparent",
               color: "var(--stats-color)",
@@ -100,6 +123,7 @@ export function Header({
         <button
           type="button"
           onClick={() => onSectionChange("contracts")}
+          id="tour-section-contracts"
           style={{
             border: "1px solid var(--card-border)",
             background: activeSection === "contracts" ? "var(--accent-color)" : "var(--card-bg)",
@@ -116,6 +140,7 @@ export function Header({
         <button
           type="button"
           onClick={() => onSectionChange("coverage")}
+          id="tour-section-coverage"
           style={{
             border: "1px solid var(--card-border)",
             background: activeSection === "coverage" ? "var(--accent-color)" : "var(--card-bg)",

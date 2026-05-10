@@ -59,6 +59,7 @@ export function SearchBar({ query, setQuery, categoryFilter, setCategoryFilter, 
       <div style={{ position: "relative", flexGrow: 1 }}>
         <span style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)", color: "var(--accent-color)", fontSize: "16px", pointerEvents: "none" }}>⌕</span>
         <input
+          id="tour-search-query"
           type="text"
           placeholder="Buscar por obra, nº cliente, cliente o descripción..."
           value={internalQuery}
@@ -81,6 +82,7 @@ export function SearchBar({ query, setQuery, categoryFilter, setCategoryFilter, 
 
       <div style={{ position: "relative", width: "150px" }}>
         <input
+          id="tour-search-category"
           type="text"
           placeholder="Categoría (ej. Mantenimiento)"
           value={internalCategoryFilter}
