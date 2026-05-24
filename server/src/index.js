@@ -170,6 +170,18 @@ CREATE TABLE IF NOT EXISTS coverage_assignments (
 CREATE INDEX IF NOT EXISTS idx_coverage_assignments_technician_position ON coverage_assignments(technician_id, position);
 `);
 
+db.exec(`
+CREATE TABLE IF NOT EXISTS coverage_absence_config (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  absent_technician_id TEXT NOT NULL,
+  start_date TEXT NOT NULL,
+  end_date TEXT NOT NULL,
+  base_assignments_json TEXT NOT NULL,
+  override_assignments_json TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+`);
+
 const hashPassword = (password) => {
   const salt = crypto.randomBytes(16).toString('hex');
   const hash = crypto.scryptSync(password, salt, 64).toString('hex');
@@ -715,10 +727,171 @@ const CoverageAssignmentsSchema = z.object({
   })
 });
 
+const CoverageAddItemSchema = z.object({
+  technician_id: z.enum(['fe', 'jc', 'yo', 'ab']),
+  loc: z.string().min(1),
+  area: z.string().min(1)
+});
+
+const CoverageAbsenceApplySchema = z.object({
+  absentId: z.enum(['fe', 'jc', 'yo', 'ab']),
+  start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+});
+
+const getIsoToday = () => {
+  const d = new Date();
+  const y = String(d.getFullYear());
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+const getAbsenceConfig = () => {
+  const row = db.prepare(`
+    SELECT absent_technician_id, start_date, end_date, base_assignments_json, override_assignments_json
+    FROM coverage_absence_config
+    WHERE id = 1
+  `).get();
+  if (!row) return null;
+  let baseAssignments = null;
+  let overrideAssignments = null;
+  try {
+    baseAssignments = JSON.parse(row.base_assignments_json);
+  } catch {
+    baseAssignments = null;
+  }
+  try {
+    overrideAssignments = JSON.parse(row.override_assignments_json);
+  } catch {
+    overrideAssignments = null;
+  }
+  if (!baseAssignments || !overrideAssignments) return null;
+  return {
+    absentId: row.absent_technician_id,
+    start_date: row.start_date,
+    end_date: row.end_date,
+    baseAssignments,
+    overrideAssignments
+  };
+};
+
+const isDateInRange = (isoDate, startIso, endIso) => {
+  if (!isoDate || !startIso || !endIso) return false;
+  const start = startIso <= endIso ? startIso : endIso;
+  const end = startIso <= endIso ? endIso : startIso;
+  return isoDate >= start && isoDate <= end;
+};
+
+const applyAbsenceOverride = (absentId, baseAssignments) => {
+  const activeTechs = COVERAGE_TECHNICIAN_IDS.filter((id) => id !== absentId);
+  const next = Object.fromEntries(COVERAGE_TECHNICIAN_IDS.map((id) => [id, (baseAssignments[id] || []).map((r) => ({ loc: r.loc, area: r.area }))]));
+
+  if (!activeTechs.length) return next;
+
+  const absentTasks = next[absentId] || [];
+  next[absentId] = [];
+
+  const currentLoad = Object.fromEntries(activeTechs.map((id) => [id, (next[id] || []).length]));
+
+  for (const task of absentTasks) {
+    let bestId = activeTechs[0];
+    for (const candidate of activeTechs) {
+      if (currentLoad[candidate] < currentLoad[bestId]) bestId = candidate;
+    }
+    currentLoad[bestId] += 1;
+    next[bestId] = [...(next[bestId] || []), { loc: task.loc, area: task.area }];
+  }
+
+  return next;
+};
+
+const appendCoverageItem = (assignments, technicianId, item) => {
+  const next = Object.fromEntries(COVERAGE_TECHNICIAN_IDS.map((id) => [id, (assignments[id] || []).map((r) => ({ loc: r.loc, area: r.area }))]));
+  next[technicianId] = [...(next[technicianId] || []), { loc: item.loc, area: item.area }];
+  return next;
+};
+
+const appendAbsenceOverrideItem = (cfg, baseAssignments, overrideAssignments, technicianId, item) => {
+  if (!cfg) return overrideAssignments;
+  const absentId = cfg.absentId;
+  const next = appendCoverageItem(overrideAssignments, technicianId, item);
+  if (technicianId !== absentId) return next;
+
+  // If the new item was assigned to the absent tech, redistribute it following current load.
+  const activeTechs = COVERAGE_TECHNICIAN_IDS.filter((id) => id !== absentId);
+  if (!activeTechs.length) return next;
+
+  next[absentId] = [];
+  const currentLoad = Object.fromEntries(activeTechs.map((id) => [id, (next[id] || []).length]));
+  let bestId = activeTechs[0];
+  for (const candidate of activeTechs) {
+    if (currentLoad[candidate] < currentLoad[bestId]) bestId = candidate;
+  }
+  next[bestId] = [...(next[bestId] || []), { loc: item.loc, area: item.area }];
+  return next;
+};
+
 app.use('/api/coverage', requireAuth);
 
 app.get('/api/coverage/assignments', (_req, res) => {
-  return res.json({ assignments: buildCoverageAssignmentsShape() });
+  const base = buildCoverageAssignmentsShape();
+  const cfg = getAbsenceConfig();
+  const today = getIsoToday();
+  if (cfg && isDateInRange(today, cfg.start_date, cfg.end_date)) {
+    return res.json({
+      assignments: cfg.overrideAssignments,
+      mode: 'absence',
+      absence: { absentId: cfg.absentId, start_date: cfg.start_date, end_date: cfg.end_date },
+      baseAssignments: cfg.baseAssignments
+    });
+  }
+  return res.json({ assignments: base, mode: 'normal' });
+});
+
+app.post('/api/coverage/assignments/items', requireAdmin, (req, res) => {
+  const payload = CoverageAddItemSchema.parse(req.body);
+  const technicianId = payload.technician_id;
+  const loc = payload.loc.trim();
+  const area = payload.area.trim();
+  if (!loc || !area) return res.status(400).json({ error: 'loc y area son obligatorios' });
+
+  const posRow = db.prepare('SELECT COALESCE(MAX(position), -1) as maxPos FROM coverage_assignments WHERE technician_id = ?').get(technicianId);
+  const nextPos = Number(posRow?.maxPos ?? -1) + 1;
+
+  try {
+    db.prepare(`
+      INSERT INTO coverage_assignments (technician_id, loc, area, position)
+      VALUES (?, ?, ?, ?)
+    `).run(technicianId, loc, area, nextPos);
+  } catch (e) {
+    if ((e && e.code) === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return res.status(400).json({ error: `El cliente "${loc} / ${area}" ya existe en el reparto` });
+    }
+    return res.status(500).json({ error: 'No se pudo crear el cliente' });
+  }
+
+  const baseAssignments = buildCoverageAssignmentsShape();
+  const cfg = getAbsenceConfig();
+  const today = getIsoToday();
+  const active = cfg && isDateInRange(today, cfg.start_date, cfg.end_date);
+  if (active) {
+    const overrideNext = appendAbsenceOverrideItem(cfg, baseAssignments, cfg.overrideAssignments, technicianId, { loc, area });
+    db.prepare(`
+      UPDATE coverage_absence_config
+      SET override_assignments_json = ?, base_assignments_json = ?, created_at = datetime('now')
+      WHERE id = 1
+    `).run(JSON.stringify(overrideNext), JSON.stringify(baseAssignments));
+    return res.json({
+      ok: true,
+      mode: 'absence',
+      absence: { absentId: cfg.absentId, start_date: cfg.start_date, end_date: cfg.end_date },
+      baseAssignments,
+      assignments: overrideNext
+    });
+  }
+
+  return res.json({ ok: true, mode: 'normal', assignments: baseAssignments });
 });
 
 app.put('/api/coverage/assignments', requireAdmin, (req, res) => {
@@ -742,6 +915,23 @@ app.put('/api/coverage/assignments', requireAdmin, (req, res) => {
     VALUES (?, ?, ?, ?)
   `);
 
+  const cfg = getAbsenceConfig();
+  const today = getIsoToday();
+  const shouldUpdateOverride = cfg && isDateInRange(today, cfg.start_date, cfg.end_date);
+
+  if (shouldUpdateOverride) {
+    db.prepare(`
+      UPDATE coverage_absence_config
+      SET override_assignments_json = ?, created_at = datetime('now')
+      WHERE id = 1
+    `).run(JSON.stringify(assignments));
+    return res.json({
+      assignments,
+      mode: 'absence',
+      absence: { absentId: cfg.absentId, start_date: cfg.start_date, end_date: cfg.end_date }
+    });
+  }
+
   db.transaction(() => {
     clearCoverage.run();
     for (const technicianId of COVERAGE_TECHNICIAN_IDS) {
@@ -751,7 +941,52 @@ app.put('/api/coverage/assignments', requireAdmin, (req, res) => {
     }
   })();
 
-  return res.json({ assignments: buildCoverageAssignmentsShape() });
+  return res.json({ assignments: buildCoverageAssignmentsShape(), mode: 'normal' });
+});
+
+app.put('/api/coverage/absence/apply', requireAdmin, (req, res) => {
+  const payload = CoverageAbsenceApplySchema.parse(req.body);
+  const absentId = payload.absentId;
+  const startDate = payload.start_date;
+  const endDate = payload.end_date;
+
+  const baseAssignments = buildCoverageAssignmentsShape();
+  const overrideAssignments = applyAbsenceOverride(absentId, baseAssignments);
+
+  const upsert = db.prepare(`
+    INSERT INTO coverage_absence_config (id, absent_technician_id, start_date, end_date, base_assignments_json, override_assignments_json)
+    VALUES (1, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      absent_technician_id = excluded.absent_technician_id,
+      start_date = excluded.start_date,
+      end_date = excluded.end_date,
+      base_assignments_json = excluded.base_assignments_json,
+      override_assignments_json = excluded.override_assignments_json,
+      created_at = datetime('now')
+  `);
+
+  upsert.run(
+    absentId,
+    startDate,
+    endDate,
+    JSON.stringify(baseAssignments),
+    JSON.stringify(overrideAssignments)
+  );
+
+  const today = getIsoToday();
+  const active = isDateInRange(today, startDate, endDate);
+  return res.json({
+    ok: true,
+    active,
+    assignments: active ? overrideAssignments : baseAssignments,
+    baseAssignments,
+    absence: { absentId, start_date: startDate, end_date: endDate }
+  });
+});
+
+app.delete('/api/coverage/absence', requireAdmin, (_req, res) => {
+  db.prepare('DELETE FROM coverage_absence_config WHERE id = 1').run();
+  return res.json({ ok: true });
 });
 
 app.use('/api/contracts', requireAuth);
