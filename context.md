@@ -1,4 +1,4 @@
-PROMPT DE CONTEXTO: Contel-Buscador (v2.8.2)
+PROMPT DE CONTEXTO: Contel-Buscador (v2.9.0)
 
 1. Proyecto y Stack:
 * Proposito: Gestion de mantenimientos y helpdesk para Contel Ingenieros.
@@ -19,6 +19,7 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.8.2)
   * `auth_sessions`: sesiones backend con expiracion y cookie `HttpOnly`.
 * Esquema de cobertura dinamica:
   * `coverage_assignments`: asignacion editable de tareas (`technician_id`, `loc`, `area`, `position`).
+  * `coverage_absence_config`: configuracion persistente de ausencia por rango (override de asignaciones para el periodo).
   * Seed automatico del reparto base si la tabla de cobertura esta vacia.
 
 3. Seguridad y acceso:
@@ -48,7 +49,11 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.8.2)
   * Consulta por tooltip al pasar el raton sobre el servicio.
 * Vista "Asignacion de Soporte" integrada en React con dos modos:
   * Reparto normal (editable por drag & drop entre tecnicos).
-  * Simulacion por ausencia (redistribucion automatica segun carga actual).
+  * Ausencia por rango (reasignacion automatica segun carga actual), aplicable y persistente durante el periodo.
+* Buscador de clientes en "Asignacion de Soporte":
+  * Permite buscar por cliente/obra y ver el tecnico y area asignados.
+* Alta de nuevos clientes/trabajos en cobertura:
+  * Permite crear un nuevo cliente/trabajo, asignarlo a un tecnico y persistirlo en SQLite.
 * Tour guiado (onboarding) con React Joyride:
   * Boton "Tour" en header para iniciarlo manualmente.
   * Auto-inicio la primera vez por navegador (persistido en localStorage).

@@ -1,4 +1,36 @@
 # Notas de Lanzamiento
+## Versión 2.9.0 (24 de mayo de 2026)
+
+### Nuevas Funcionalidades
+
+- **Asignacion de Soporte: buscador de clientes**:
+  - Nuevo buscador por cliente/obra dentro de la vista de cobertura.
+  - Al buscar por cliente muestra el tecnico asignado y el area (CCTV/Monitor.).
+
+- **Ausencia por rango con aplicacion persistente**:
+  - Se puede definir un rango **Desde / Hasta** y aplicar la ausencia.
+  - Durante el rango, el backend sirve automaticamente el reparto **reasignado** para el tecnico ausente, usando los criterios de balance por carga existentes.
+  - Botones para **Aplicar y guardar** y **Retirar ausencia**.
+
+- **Alta de nuevos clientes/trabajos en cobertura**:
+  - Formulario en "Ver asignacion normal" para crear un nuevo cliente/trabajo, asignarlo a un tecnico y persistirlo en SQLite.
+
+### Detalles Tecnicos Clave
+
+- **Backend (`server/src/index.js`)**:
+  - Nueva tabla `coverage_absence_config` para persistir la ausencia (rango + override de asignaciones).
+  - `GET /api/coverage/assignments` devuelve `mode` (`normal|absence`) y activa automaticamente el override si la fecha actual cae dentro del rango guardado.
+  - Nuevo endpoint `PUT /api/coverage/absence/apply` (ADMIN) para aplicar y persistir una ausencia por rango.
+  - Nuevo endpoint `DELETE /api/coverage/absence` (ADMIN) para retirar la ausencia persistida.
+  - Nuevo endpoint `POST /api/coverage/assignments/items` (ADMIN) para crear y asignar nuevos clientes/trabajos de forma persistente.
+
+- **Frontend (`src/components/coverage/CoveragePlanner.jsx`)**:
+  - UI de buscador de cliente en cobertura.
+  - UI de rango de fechas + acciones (aplicar/retirar) para ausencias.
+  - UI de alta de cliente/trabajo en la vista de reparto normal.
+
+---
+
 ## Versión 2.8.2 (10 de mayo de 2026)
 
 ### Nuevas Funcionalidades

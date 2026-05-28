@@ -2,7 +2,7 @@
 
 Aplicación web avanzada para la gestión y visualización de contratos de mantenimiento, servicios de monitorización y helpdesk. Desarrollada con **React**, **Node.js (Express)** y **SQLite**, orquestada mediante **Docker**.
 
-Versión documentada actual: **v2.8.2** (ver `release.md`).
+Versión documentada actual: **v2.9.0** (ver `release.md`).
 
 Documentación del proyecto:
 
@@ -23,6 +23,9 @@ Documentación del proyecto:
 - **Búsqueda General en Tiempo Real**: Filtrado dinámico por obra, cliente, nº cliente o descripción con resaltado de coincidencias.
 - **Búsqueda Avanzada por Categoría de Servicio**: Permite filtrar contratos por el nombre de la categoría de servicio (ej. "Mantenimiento Preventivo", "Helpdesk").
 - **Asignacion de Soporte Dinámica (Cobertura por Ausencia)**: Vista integrada en React con reparto editable por **drag & drop** entre técnicos y persistencia en base de datos.
+- **Buscador de Clientes en Asignacion de Soporte**: Permite buscar por cliente/obra y ver el técnico y área asignados.
+- **Ausencia por Rango (Aplicable y Persistente)**: Permite definir un rango de fechas para un técnico ausente y aplicar la reasignación automáticamente durante el periodo.
+- **Alta de Clientes/Trabajos en Cobertura**: Permite crear nuevos clientes/trabajos y asignarlos a un técnico de forma persistente.
 - **Cláusulas por Servicio (por cliente y categoría)**: Cada modalidad de servicio (ej. `COR. PRES.`) puede incluir una cláusula opcional específica del contrato.
 - **Tooltip de Condiciones Especiales**: Al pasar el ratón por un servicio en modo consulta se muestra la descripción y, si existe, su cláusula concreta.
 - **Gestión Completa de Contratos**: Alta, edición (vía modal) y borrado de contratos con confirmación de seguridad.
