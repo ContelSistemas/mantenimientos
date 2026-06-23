@@ -1,4 +1,26 @@
 # Notas de Lanzamiento
+## Versión 2.10.0 (23 de junio de 2026)
+
+### Nuevas Funcionalidades
+
+- **Sección de mantenimientos vencidos o sin próxima fecha**:
+  - Se añade una vista específica para listar los mantenimientos cuyo `next_execution` ya venció o no está definido.
+  - Cada fila muestra cliente, obra, categoría, periodicidad, última ejecución y próxima ejecución.
+  - La vista permite volver directamente a la ficha del contrato asociado.
+
+### Detalles Tecnicos Clave
+
+- **Backend (`server/src/index.js`)**:
+  - Nuevo endpoint autenticado `GET /api/maintenance/alerts`.
+  - El listado se construye a partir de `contract_services` y devuelve los registros con `next_execution` vacío o anterior a la fecha actual.
+
+- **Frontend (`src/App.jsx`, `src/components/layout/Header.jsx`, `src/components/maintenance/MaintenanceAlerts.jsx`)**:
+  - Nueva sección en el header para acceder al listado.
+  - Nueva vista dedicada con resumen de vencidos y contratos sin fecha.
+  - Botón para saltar de un aviso a la ficha del contrato.
+
+---
+
 ## Versión 2.9.0 (24 de mayo de 2026)
 
 ### Nuevas Funcionalidades

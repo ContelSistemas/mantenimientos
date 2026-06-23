@@ -635,6 +635,75 @@ const getContractShape = (id) => {
   };
 };
 
+const getMaintenanceAlerts = () => {
+  const rows = db.prepare(`
+    SELECT
+      c.id AS contract_id,
+      c.obra,
+      c.empresa,
+      c.nCliente,
+      c.cliente,
+      c.descripcion,
+      cat.name AS category,
+      cs.services_json,
+      cs.periodicity,
+      cs.last_execution,
+      cs.next_execution
+    FROM contract_services cs
+    JOIN contracts c ON c.id = cs.contract_id
+    JOIN categories cat ON cat.id = cs.category_id
+    WHERE TRIM(COALESCE(cs.next_execution, '')) = ''
+       OR date(cs.next_execution) < date('now')
+    ORDER BY
+      CASE
+        WHEN TRIM(COALESCE(cs.next_execution, '')) = '' THEN 1
+        ELSE 0
+      END ASC,
+      CASE
+        WHEN TRIM(COALESCE(cs.next_execution, '')) = '' THEN NULL
+        ELSE date(cs.next_execution)
+      END ASC,
+      c.cliente ASC,
+      c.obra ASC,
+      cat.name ASC
+  `).all();
+
+  return rows.map((row) => {
+    let flags = {};
+    try {
+      flags = row.services_json ? JSON.parse(row.services_json) : {};
+    } catch {
+      flags = {};
+    }
+
+    const activeServices = Object.entries(flags)
+      .filter(([, active]) => Boolean(active))
+      .map(([serviceKey]) => serviceKey);
+
+    const nextExecution = row.next_execution || null;
+    const status = !nextExecution
+      ? 'missing'
+      : new Date(`${nextExecution}T00:00:00`).getTime() < Date.now()
+        ? 'overdue'
+        : 'upcoming';
+
+    return {
+      contract_id: row.contract_id,
+      obra: row.obra,
+      empresa: row.empresa,
+      nCliente: row.nCliente,
+      cliente: row.cliente,
+      descripcion: row.descripcion,
+      category: row.category,
+      periodicity: row.periodicity,
+      last_execution: row.last_execution,
+      next_execution: nextExecution,
+      activeServices,
+      status
+    };
+  });
+};
+
 // Routes
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
@@ -990,6 +1059,7 @@ app.delete('/api/coverage/absence', requireAdmin, (_req, res) => {
 });
 
 app.use('/api/contracts', requireAuth);
+app.use('/api/maintenance', requireAuth);
 
 // List + search
 app.get('/api/contracts', (req, res) => {
@@ -1029,6 +1099,10 @@ app.get('/api/contracts', (req, res) => {
 
   const data = rows.map(r => getContractShape(r.id));
   res.json(data);
+});
+
+app.get('/api/maintenance/alerts', (_req, res) => {
+  res.json(getMaintenanceAlerts());
 });
 
 // Create

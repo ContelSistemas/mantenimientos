@@ -154,6 +154,23 @@ export function Header({
         >
           Asignacion de Soporte
         </button>
+        <button
+          type="button"
+          onClick={() => onSectionChange("maintenance")}
+          id="tour-section-maintenance"
+          style={{
+            border: "1px solid var(--card-border)",
+            background: activeSection === "maintenance" ? "var(--accent-color)" : "var(--card-bg)",
+            color: activeSection === "maintenance" ? "white" : "var(--text-color)",
+            borderRadius: "8px",
+            padding: "6px 10px",
+            fontSize: "11px",
+            fontWeight: 600,
+            cursor: "pointer"
+          }}
+        >
+          Mantenimientos vencidos
+        </button>
       </div>
 
       {activeSection === "contracts" ? (
@@ -192,7 +209,9 @@ export function Header({
         </div>
       ) : (
         <div style={{ marginTop: "6px", fontSize: "11px", color: "var(--stats-color)" }}>
-          Consulta y simulacion de cobertura interna por ausencia de tecnico.
+          {activeSection === "coverage"
+            ? "Consulta y simulacion de cobertura interna por ausencia de tecnico."
+            : "Listado de mantenimientos vencidos o sin fecha de próxima ejecución."}
         </div>
       )}
     </div>

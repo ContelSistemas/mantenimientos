@@ -5,6 +5,7 @@ import { ContractForm } from "./components/contracts/ContractForm";
 import { CoveragePlanner } from "./components/coverage/CoveragePlanner";
 import { LoginPage } from "./components/auth/LoginPage";
 import { AppTour } from "./components/tour/AppTour";
+import { MaintenanceAlerts } from "./components/maintenance/MaintenanceAlerts";
 
 // Simple debounce function
 const debounce = (func, delay) => {
@@ -36,6 +37,9 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
   const [isTourOpen, setIsTourOpen] = useState(false);
+  const [maintenanceData, setMaintenanceData] = useState([]);
+  const [maintenanceLoading, setMaintenanceLoading] = useState(true);
+  const [maintenanceError, setMaintenanceError] = useState(null);
 
   // Theme management
   const [theme, setTheme] = useState(() => {
@@ -60,6 +64,8 @@ export default function App() {
         setIsAuthenticated(false);
         setUserRole("VIEWER");
         setUsername("");
+        setMaintenanceData([]);
+        setMaintenanceError(null);
         return;
       }
       const json = await res.json();
@@ -70,6 +76,8 @@ export default function App() {
       setIsAuthenticated(false);
       setUserRole("VIEWER");
       setUsername("");
+      setMaintenanceData([]);
+      setMaintenanceError(null);
     } finally {
       setAuthLoading(false);
       setAuthChecked(true);
@@ -95,10 +103,14 @@ export default function App() {
       setUserRole(json.user?.role || "VIEWER");
       setUsername(json.user?.username || "");
       setAuthError("");
+      setMaintenanceData([]);
+      setMaintenanceError(null);
     } catch (err) {
       setIsAuthenticated(false);
       setUserRole("VIEWER");
       setUsername("");
+      setMaintenanceData([]);
+      setMaintenanceError(null);
       setAuthError(err.message || "Error de autenticacion");
     } finally {
       setAuthLoading(false);
@@ -121,6 +133,8 @@ export default function App() {
     setEditingContract(null);
     setExpanded(null);
     setIsTourOpen(false);
+    setMaintenanceData([]);
+    setMaintenanceError(null);
   }, []);
 
   useEffect(() => {
@@ -159,6 +173,29 @@ export default function App() {
     }
   }, []);
 
+  const fetchMaintenanceAlerts = useCallback(async () => {
+    setMaintenanceLoading(true);
+    setMaintenanceError(null);
+    try {
+      const res = await fetch('/api/maintenance/alerts', { credentials: 'same-origin' });
+      if (res.status === 401) {
+        setIsAuthenticated(false);
+        setUserRole("VIEWER");
+        setUsername("");
+        setMaintenanceData([]);
+        return;
+      }
+      if (!res.ok) throw new Error("Error cargando los mantenimientos");
+      const json = await res.json();
+      setMaintenanceData(json);
+    } catch (err) {
+      console.error(err);
+      setMaintenanceError(err.message);
+    } finally {
+      setMaintenanceLoading(false);
+    }
+  }, []);
+
   const debouncedFetchContracts = useMemo(() => debounce(fetchContracts, 300), [fetchContracts]);
 
   useEffect(() => {
@@ -170,6 +207,12 @@ export default function App() {
       debouncedFetchContracts(query, categoryFilter);
     }
   }, [isAuthenticated, activeSection, query, categoryFilter, debouncedFetchContracts]);
+
+  useEffect(() => {
+    if (isAuthenticated && activeSection === "maintenance") {
+      fetchMaintenanceAlerts();
+    }
+  }, [activeSection, fetchMaintenanceAlerts, isAuthenticated]);
 
   const results = useMemo(() => data, [data]);
   const contractsReady = activeSection === "contracts" && !loading && results.length > 0;
@@ -263,8 +306,21 @@ export default function App() {
               ))}
             </div>
           )
-        ) : (
+        ) : activeSection === "coverage" ? (
           <CoveragePlanner userRole={userRole} />
+        ) : (
+          <MaintenanceAlerts
+            items={maintenanceData}
+            loading={maintenanceLoading}
+            error={maintenanceError}
+            query={query}
+            onOpenContract={(item) => {
+              setQuery(item.obra || "");
+              setCategoryFilter("");
+              setExpanded(item.contract_id);
+              setActiveSection("contracts");
+            }}
+          />
         )}
       </div>
 

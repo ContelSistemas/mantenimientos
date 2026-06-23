@@ -1,4 +1,4 @@
-PROMPT DE CONTEXTO: Contel-Buscador (v2.9.0)
+PROMPT DE CONTEXTO: Contel-Buscador (v2.10.0)
 
 1. Proyecto y Stack:
 * Proposito: Gestion de mantenimientos y helpdesk para Contel Ingenieros.
@@ -50,6 +50,10 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.9.0)
 * Vista "Asignacion de Soporte" integrada en React con dos modos:
   * Reparto normal (editable por drag & drop entre tecnicos).
   * Ausencia por rango (reasignacion automatica segun carga actual), aplicable y persistente durante el periodo.
+* Seccion de mantenimientos vencidos:
+  * Lista los servicios con `next_execution` vencido o sin fecha programada.
+  * Muestra cliente, obra, categoria, periodicidad y fechas de ejecucion.
+  * Permite saltar a la ficha del contrato asociado.
 * Buscador de clientes en "Asignacion de Soporte":
   * Permite buscar por cliente/obra y ver el tecnico y area asignados.
 * Alta de nuevos clientes/trabajos en cobertura:
@@ -59,12 +63,18 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.9.0)
   * Auto-inicio la primera vez por navegador (persistido en localStorage).
   * Pasos anclados a elementos concretos: buscador, primer contrato y boton de notas, cobertura, tema y logout.
 
-5. Estado reciente (v2.8.2):
+5. Estado reciente (v2.10.0):
+* Seccion de mantenimientos vencidos:
+  * Nueva vista dedicada para revisar los servicios cuyo `next_execution` ya paso o no esta definido.
+  * Nuevo endpoint autenticado `GET /api/maintenance/alerts`.
+  * Nueva pantalla en React con resumen y acceso rapido al contrato.
+
+5.1 Estado reciente (v2.8.2):
 * Tour guiado integrado con React Joyride:
   * Nuevo componente `AppTour` con pasos y estilos consistentes con el tema.
   * Fix de anclaje: los pasos de "Abrir un contrato" y "Notas por contrato" apuntan al primer contrato visible dentro del contenedor de lista, evitando desajustes por targets multiples o DOM aun no renderizado.
 
-5.1 Estado reciente (v2.8.1):
+5.2 Estado reciente (v2.8.1):
 * Notas por contrato persistidas:
   * Nuevo campo `notes` en `contracts` (migracion automatica).
   * API de contratos actualizada para leer/escribir notas en `POST /api/contracts` y `PUT /api/contracts/:id`.
@@ -72,7 +82,7 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.9.0)
 * Endurecimiento de permisos en contratos:
   * Operaciones mutables de contratos (POST/PUT/DELETE y gestion de PDFs) restringidas a rol `ADMIN`.
 
-5.2 Estado reciente (v2.8.0):
+5.3 Estado reciente (v2.8.0):
 * Fechas de inicio/fin integradas en contratos:
   * Nuevos campos persistentes `start_date` y `end_date` en `contracts` (migracion automatica).
   * API de contratos actualizada para leer/escribir fechas en `POST /api/contracts` y `PUT /api/contracts/:id`.
