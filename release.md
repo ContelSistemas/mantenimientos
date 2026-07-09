@@ -1,4 +1,29 @@
 # Notas de Lanzamiento
+## Versión 2.11.0 (9 de julio de 2026)
+
+### Nuevas Funcionalidades
+
+- **Mejoras en la vista de Mantenimientos Vencidos**:
+  - **Filtro por estado**: Permite filtrar la lista por "Todos", "Vencidos" o "Sin fecha" mediante botones de selección visual.
+  - **Ordenación configurable**: Nuevo selector con 6 opciones de ordenación:
+    - Próximo vencimiento ascendente/descendente
+    - Última ejecución ascendente/descendente
+    - Cliente A-Z / Z-A
+  - Los controles de filtro y ordenación se mantienen persistentes durante la sesión.
+
+### Detalles Tecnicos Clave
+
+- **Backend (`server/src/index.js`)**:
+  - Endpoint `GET /api/maintenance/alerts` extendido con parámetros `filter` (`all|overdue|missing`) y `sort` (`next_execution_asc|next_execution_desc|last_execution_asc|last_execution_desc|cliente_asc|cliente_desc`).
+  - Lógica de filtrado y ordenación delegada a SQLite para mejor rendimiento.
+
+- **Frontend (`src/components/maintenance/MaintenanceAlerts.jsx`)**:
+  - Componente refactorizado para gestionar su propio estado y llamadas a la API.
+  - UI con botones de filtro (estilo "pills" con estado activo) y dropdown de ordenación.
+  - Fetch automático al cambiar filtros/ordenación.
+
+---
+
 ## Versión 2.10.0 (23 de junio de 2026)
 
 ### Nuevas Funcionalidades

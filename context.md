@@ -1,4 +1,4 @@
-PROMPT DE CONTEXTO: Contel-Buscador (v2.10.0)
+PROMPT DE CONTEXTO: Contel-Buscador (v2.11.0)
 
 1. Proyecto y Stack:
 * Proposito: Gestion de mantenimientos y helpdesk para Contel Ingenieros.
@@ -54,6 +54,10 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.10.0)
   * Lista los servicios con `next_execution` vencido o sin fecha programada.
   * Muestra cliente, obra, categoria, periodicidad y fechas de ejecucion.
   * Permite saltar a la ficha del contrato asociado.
+  * **Filtros por estado**: Todos / Vencidos / Sin fecha (botones con estado activo).
+  * **Ordenacion configurable**: por proximo vencimiento (asc/desc), ultima ejecucion (asc/desc), cliente (A-Z/Z-A).
+  * Endpoint `GET /api/maintenance/alerts` acepta parametros `filter` y `sort`; logica delegada a SQLite.
+  * Componente frontend autónomo (`MaintenanceAlerts.jsx`) con fetch reactivo al cambiar filtros/ordenación.
 * Buscador de clientes en "Asignacion de Soporte":
   * Permite buscar por cliente/obra y ver el tecnico y area asignados.
 * Alta de nuevos clientes/trabajos en cobertura:
@@ -63,7 +67,14 @@ PROMPT DE CONTEXTO: Contel-Buscador (v2.10.0)
   * Auto-inicio la primera vez por navegador (persistido en localStorage).
   * Pasos anclados a elementos concretos: buscador, primer contrato y boton de notas, cobertura, tema y logout.
 
-5. Estado reciente (v2.10.0):
+5. Estado reciente (v2.11.0):
+* Mejoras en Mantenimientos Vencidos:
+  * Filtros por estado: **Todos**, **Vencidos**, **Sin fecha** (UI con botones tipo pill y estado activo visual).
+  * Ordenación: **Próximo vencimiento** ↑/↓, **Última ejecución** ↑/↓, **Cliente** A-Z/Z-A.
+  * Backend: `GET /api/maintenance/alerts` extendido con `filter` (`all|overdue|missing`) y `sort` (6 opciones); cláusulas `WHERE`/`ORDER BY` dinámicas en SQLite.
+  * Frontend: `MaintenanceAlerts.jsx` refactorizado a componente stateful con `useEffect` reactivo a `filter`/`sort`.
+
+5.1 Estado reciente (v2.10.0):
 * Seccion de mantenimientos vencidos:
   * Nueva vista dedicada para revisar los servicios cuyo `next_execution` ya paso o no esta definido.
   * Nuevo endpoint autenticado `GET /api/maintenance/alerts`.

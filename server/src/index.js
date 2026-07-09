@@ -635,8 +635,98 @@ const getContractShape = (id) => {
   };
 };
 
-const getMaintenanceAlerts = () => {
-  const rows = db.prepare(`
+const getMaintenanceAlerts = (req = {}) => {
+  const { filter = 'all', sort = 'next_execution_asc' } = req.query || {};
+
+  const whereClause = filter === 'missing'
+    ? "TRIM(COALESCE(cs.next_execution, '')) = ''"
+    : filter === 'overdue'
+      ? "date(cs.next_execution) < date('now')"
+      : "TRIM(COALESCE(cs.next_execution, '')) = '' OR date(cs.next_execution) < date('now')";
+
+  let orderByClause = '';
+  if (sort === 'next_execution_asc') {
+    orderByClause = `
+      ORDER BY
+        CASE
+          WHEN TRIM(COALESCE(cs.next_execution, '')) = '' THEN 1
+          ELSE 0
+        END ASC,
+        CASE
+          WHEN TRIM(COALESCE(cs.next_execution, '')) = '' THEN NULL
+          ELSE date(cs.next_execution)
+        END ASC,
+        c.cliente ASC,
+        c.obra ASC,
+        cat.name ASC
+    `;
+  } else if (sort === 'next_execution_desc') {
+    orderByClause = `
+      ORDER BY
+        CASE
+          WHEN TRIM(COALESCE(cs.next_execution, '')) = '' THEN 0
+          ELSE 1
+        END DESC,
+        CASE
+          WHEN TRIM(COALESCE(cs.next_execution, '')) = '' THEN NULL
+          ELSE date(cs.next_execution)
+        END DESC,
+        c.cliente ASC,
+        c.obra ASC,
+        cat.name ASC
+    `;
+  } else if (sort === 'last_execution_asc') {
+    orderByClause = `
+      ORDER BY
+        CASE
+          WHEN TRIM(COALESCE(cs.last_execution, '')) = '' THEN 1
+          ELSE 0
+        END ASC,
+        CASE
+          WHEN TRIM(COALESCE(cs.last_execution, '')) = '' THEN NULL
+          ELSE date(cs.last_execution)
+        END ASC,
+        c.cliente ASC,
+        c.obra ASC,
+        cat.name ASC
+    `;
+  } else if (sort === 'last_execution_desc') {
+    orderByClause = `
+      ORDER BY
+        CASE
+          WHEN TRIM(COALESCE(cs.last_execution, '')) = '' THEN 0
+          ELSE 1
+        END DESC,
+        CASE
+          WHEN TRIM(COALESCE(cs.last_execution, '')) = '' THEN NULL
+          ELSE date(cs.last_execution)
+        END DESC,
+        c.cliente ASC,
+        c.obra ASC,
+        cat.name ASC
+    `;
+  } else if (sort === 'cliente_asc') {
+    orderByClause = `ORDER BY c.cliente ASC, c.obra ASC, cat.name ASC`;
+  } else if (sort === 'cliente_desc') {
+    orderByClause = `ORDER BY c.cliente DESC, c.obra ASC, cat.name ASC`;
+  } else {
+    orderByClause = `
+      ORDER BY
+        CASE
+          WHEN TRIM(COALESCE(cs.next_execution, '')) = '' THEN 1
+          ELSE 0
+        END ASC,
+        CASE
+          WHEN TRIM(COALESCE(cs.next_execution, '')) = '' THEN NULL
+          ELSE date(cs.next_execution)
+        END ASC,
+        c.cliente ASC,
+        c.obra ASC,
+        cat.name ASC
+    `;
+  }
+
+  const query = `
     SELECT
       c.id AS contract_id,
       c.obra,
@@ -652,21 +742,11 @@ const getMaintenanceAlerts = () => {
     FROM contract_services cs
     JOIN contracts c ON c.id = cs.contract_id
     JOIN categories cat ON cat.id = cs.category_id
-    WHERE TRIM(COALESCE(cs.next_execution, '')) = ''
-       OR date(cs.next_execution) < date('now')
-    ORDER BY
-      CASE
-        WHEN TRIM(COALESCE(cs.next_execution, '')) = '' THEN 1
-        ELSE 0
-      END ASC,
-      CASE
-        WHEN TRIM(COALESCE(cs.next_execution, '')) = '' THEN NULL
-        ELSE date(cs.next_execution)
-      END ASC,
-      c.cliente ASC,
-      c.obra ASC,
-      cat.name ASC
-  `).all();
+    WHERE ${whereClause}
+    ${orderByClause}
+  `;
+
+  const rows = db.prepare(query).all();
 
   return rows.map((row) => {
     let flags = {};
@@ -1101,8 +1181,8 @@ app.get('/api/contracts', (req, res) => {
   res.json(data);
 });
 
-app.get('/api/maintenance/alerts', (_req, res) => {
-  res.json(getMaintenanceAlerts());
+app.get('/api/maintenance/alerts', requireAuth, (req, res) => {
+  res.json(getMaintenanceAlerts(req));
 });
 
 // Create

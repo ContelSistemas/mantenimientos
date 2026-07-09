@@ -2,7 +2,7 @@
 
 Aplicación web avanzada para la gestión y visualización de contratos de mantenimiento, servicios de monitorización y helpdesk. Desarrollada con **React**, **Node.js (Express)** y **SQLite**, orquestada mediante **Docker**.
 
-Versión documentada actual: **v2.10.0** (ver `release.md`).
+Versión documentada actual: **v2.11.0** (ver `release.md`).
 
 Documentación del proyecto:
 
@@ -22,7 +22,7 @@ Documentación del proyecto:
 - **Login Obligatorio con Sesión**: Acceso protegido con pantalla de inicio de sesión y sesión backend mediante cookie `HttpOnly`.
 - **Búsqueda General en Tiempo Real**: Filtrado dinámico por obra, cliente, nº cliente o descripción con resaltado de coincidencias.
 - **Búsqueda Avanzada por Categoría de Servicio**: Permite filtrar contratos por el nombre de la categoría de servicio (ej. "Mantenimiento Preventivo", "Helpdesk").
-- **Sección de Mantenimientos Vencidos**: Vista específica con los servicios cuyo próximo mantenimiento está vencido o sin fecha programada.
+- **Sección de Mantenimientos Vencidos**: Vista específica con los servicios cuyo próximo mantenimiento está vencido o sin fecha programada. Incluye **filtros por estado** (Todos / Vencidos / Sin fecha) y **ordenación** (por próximo vencimiento, última ejecución o cliente).
 - **Asignacion de Soporte Dinámica (Cobertura por Ausencia)**: Vista integrada en React con reparto editable por **drag & drop** entre técnicos y persistencia en base de datos.
 - **Buscador de Clientes en Asignacion de Soporte**: Permite buscar por cliente/obra y ver el técnico y área asignados.
 - **Ausencia por Rango (Aplicable y Persistente)**: Permite definir un rango de fechas para un técnico ausente y aplicar la reasignación automáticamente durante el periodo.
@@ -59,6 +59,11 @@ Documentación del proyecto:
     - Nuevo backend autenticado `GET /api/maintenance/alerts`.
     - Nueva vista para revisar servicios con `next_execution` vencido o ausente.
     - Acceso directo desde cada aviso a la ficha del contrato asociado.
+- **Mejoras en Mantenimientos Vencidos (v2.11.0)**:
+    - Filtros por estado: **Todos**, **Vencidos**, **Sin fecha** (botones tipo pill con estado activo).
+    - Ordenación configurable: por próximo vencimiento (↑/↓), última ejecución (↑/↓), cliente (A-Z/Z-A).
+    - Endpoint extendido con parámetros `filter` y `sort`; lógica delegada a SQLite.
+    - Componente frontend autónomo con fetch reactivo al cambiar filtros/ordenación.
 - **Cláusulas Dinámicas por Servicio**:
     - Se añade persistencia de cláusulas por servicio en backend para cada contrato/categoría.
     - Edición disponible en edición rápida y en el formulario completo (usuarios `ADMIN`).

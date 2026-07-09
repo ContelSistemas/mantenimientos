@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { CAT_CONFIG, SVC_LABELS, PERIODICITY_OPTIONS } from "../../constants/config";
 import { highlight } from "../../utils/helpers";
 
@@ -16,7 +16,59 @@ function getStatusLabel(status) {
   return "Pendiente";
 }
 
-export function MaintenanceAlerts({ items, query = "", loading = false, error = null, onOpenContract }) {
+const FILTER_OPTIONS = [
+  { value: "all", label: "Todos" },
+  { value: "overdue", label: "Vencidos" },
+  { value: "missing", label: "Sin fecha" }
+];
+
+const SORT_OPTIONS = [
+  { value: "next_execution_asc", label: "Próximo vencimiento ↑" },
+  { value: "next_execution_desc", label: "Próximo vencimiento ↓" },
+  { value: "last_execution_asc", label: "Última ejecución ↑" },
+  { value: "last_execution_desc", label: "Última ejecución ↓" },
+  { value: "cliente_asc", label: "Cliente A-Z" },
+  { value: "cliente_desc", label: "Cliente Z-A" }
+];
+
+export function MaintenanceAlerts({
+  query = "",
+  onOpenContract
+}) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [filter, setFilter] = useState("all");
+  const [sort, setSort] = useState("next_execution_asc");
+
+  const fetchAlerts = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({
+        filter,
+        sort
+      });
+      const res = await fetch(`/api/maintenance/alerts?${params.toString()}`, { credentials: 'same-origin' });
+      if (res.status === 401) {
+        window.location.reload();
+        return;
+      }
+      if (!res.ok) throw new Error("Error cargando los mantenimientos");
+      const json = await res.json();
+      setItems(json);
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [filter, sort]);
+
+  useEffect(() => {
+    fetchAlerts();
+  }, [fetchAlerts]);
+
   const summary = useMemo(() => {
     const overdue = items.filter((item) => item.status === "overdue").length;
     const missing = items.filter((item) => item.status === "missing").length;
@@ -49,6 +101,47 @@ export function MaintenanceAlerts({ items, query = "", loading = false, error = 
         <span style={{ fontSize: "11px", color: "#f59e0b" }}>
           Sin fecha: <b>{summary.missing}</b>
         </span>
+        <div style={{ marginLeft: "auto", display: "flex", gap: "6px", flexWrap: "wrap" }}>
+          {FILTER_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setFilter(opt.value)}
+              style={{
+                padding: "6px 12px",
+                borderRadius: "8px",
+                fontSize: "11px",
+                fontWeight: 600,
+                cursor: "pointer",
+                border: "1px solid var(--card-border)",
+                background: filter === opt.value ? "var(--primary-color)" : "var(--input-bg)",
+                color: filter === opt.value ? "#fff" : "var(--text-color)",
+                transition: "all 0.15s ease"
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            style={{
+              padding: "6px 10px",
+              borderRadius: "8px",
+              fontSize: "11px",
+              fontWeight: 600,
+              cursor: "pointer",
+              border: "1px solid var(--card-border)",
+              background: "var(--input-bg)",
+              color: "var(--text-color)",
+              minWidth: "180px"
+            }}
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {loading ? (
